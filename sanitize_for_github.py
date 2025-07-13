@@ -20,7 +20,7 @@ def get_replacements():
     program_files = os.environ.get('PROGRAMFILES', 'C:\\Program Files')
 
     return {
-        # Dynamic user paths (single backslash) - most common in Python strings
+        # Dynamic user paths (single backslash)
         rf'C:\\Users\\{re.escape(user_name)}\\Documents\\[^\\]+\\mkv-manager': '/path/to/mkv-manager',
         rf'C:\\Users\\{re.escape(user_name)}\\Downloads\\complete\\[^\\]+': '/path/to/mkv/source',
         rf'C:\\Users\\{re.escape(user_name)}\\Downloads\\complete': '/path/to/mkv/source',
@@ -187,7 +187,7 @@ OUTPUT_FOLDER = os.path.join(MKV_FOLDER, "processed")  # Output folder for proce
 
 # Language settings
 ALLOWED_SUB_LANGS = {"eng", "ger", "kor", "gre"}  # Allowed subtitle languages
-ALLOWED_AUDIO_LANGS = {"kor"}  # Allowed audio languages
+ALLOWED_AUDIO_LANGS = {"eng", "kor"}  # Allowed audio languages
 
 DEFAULT_AUDIO_LANG = "kor"  # Default audio language
 DEFAULT_SUBTITLE_LANG = "eng"  # Default subtitle language

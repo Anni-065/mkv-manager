@@ -3,23 +3,22 @@ import subprocess
 from datetime import datetime
 import re
 
-MKVMERGE_PATH = r"/usr/bin/mkvmerge"
-MKV_FOLDER = r"/path/to/mkv/source"
-OUTPUT_FOLDER = os.path.join(MKV_FOLDER, "processed")
+try:
+    from config import *
+    print("✅ Using personal_config.py")
+except ImportError:
+    try:
+        from config_example import *
+        print("⚠️ Using config_example.py - Consider creating personal_config.py")
+    except ImportError:
+        print("❌ No configuration file found!")
+        raise ImportError(
+            "Please create personal_config.py or ensure config_example.py exists")
 
 assert os.path.isfile(
     MKVMERGE_PATH), f"Cannot find mkvmerge at {MKVMERGE_PATH}"
 
 LOG_FILE = os.path.join(OUTPUT_FOLDER, "mkv_process_log.txt")
-
-ALLOWED_SUB_LANGS = {"eng", "ger", "kor", "gre"}
-ALLOWED_AUDIO_LANGS = {"kor"}
-
-DEFAULT_AUDIO_LANG = "kor"
-DEFAULT_SUBTITLE_LANG = "eng"
-
-ORIGINAL_AUDIO_LANG = "kor"
-ORIGINAL_SUBTITLE_LANG = "kor"
 
 LANG_TITLES = {
     "eng": "English",
@@ -78,7 +77,6 @@ def extract_series_info(filename):
     season_start = season_episode_match.start()
     season_end = season_episode_match.end()
 
-    # Extract series title (everything before SxxExx)
     full_title = base_name[:season_start]
 
     if season_start > 0:
@@ -100,16 +98,13 @@ def extract_series_info(filename):
         delimiter_used = ' '
         series_title = full_title
 
-    # Extract episode title (everything after SxxExx until quality tags)
     episode_title = None
     remainder = base_name[season_end:]
 
     if remainder:
-        # Remove leading delimiter if present
         if remainder.startswith('.') or remainder.startswith(' ') or remainder.startswith('-') or remainder.startswith('_'):
             remainder = remainder[1:]
 
-        # Define quality tags that indicate where episode title ends
         quality_tags = [
             r'1080p', r'720p', r'480p', r'4K', r'UHD', r'HDR', r'WEB-DL', r'BluRay', r'BDRip', r'DVDRip',
             r'x264', r'x265', r'HEVC', r'AAC', r'DTS', r'AC3', r'5\.1', r'2\.0', r'\d+Kbps', r'MSubs',
@@ -118,23 +113,19 @@ def extract_series_info(filename):
             r'Webrip', r'WebRip', r'WEBRip', r'10bit', r'8bit', r'EAC3', r'DDP5', r'APEX', r'WEB'
         ]
 
-        # Look for patterns that indicate quality/technical info starts
         quality_patterns = [
-            # Parentheses with quality info
             r'\([^)]*(?:WEB|1080p|720p|480p|x264|x265|AC3|DTS|AAC)\b[^)]*\)',
-            # Brackets with quality info or hex
             r'\[[^]]*(?:WEB|1080p|720p|480p|x264|x265|AC3|DTS|AAC|[A-F0-9]{8})\b[^]]*\]',
             r'(?:^|\s|[._-])(' + '|'.join(quality_tags) +
-            r')(?=\s|[._-]|$)',  # Direct quality tags
-            r'\b\d{3,4}p\b',  # Resolution patterns like 1080p, 720p
-            r'\bx26[45]\b',   # Codec patterns
-            r'\b[A-F0-9]{8}\b'  # 8-character hex codes
+            r')(?=\s|[._-]|$)',
+            r'\b\d{3,4}p\b',
+            r'\bx26[45]\b',
+            r'\b[A-F0-9]{8}\b'
         ]
 
         episode_title = remainder
         earliest_match = len(remainder)
 
-        # Find the earliest quality indicator
         for pattern in quality_patterns:
             match = re.search(pattern, remainder, re.IGNORECASE)
             if match:
@@ -145,21 +136,15 @@ def extract_series_info(filename):
         else:
             episode_title = remainder
 
-        # Clean up episode title
         if episode_title:
             episode_title = episode_title.strip()
 
-            # Convert dots, dashes, underscores to spaces
             episode_title = re.sub(r'[._-]+', ' ', episode_title)
-
-            # Remove extra spaces
             episode_title = re.sub(r'\s+', ' ', episode_title).strip()
 
-        # If episode title is empty or too short, set to None
         if not episode_title or len(episode_title) < 2:
             episode_title = None
 
-    # Clean up series title
     series_title = re.sub(r'[\s\-_]+$', '', series_title)
     series_title = re.sub(r'\.{2,}$', '', series_title)
 
@@ -195,7 +180,6 @@ def extract_series_info(filename):
     for abbrev, placeholder in abbreviations.items():
         series_title = series_title.replace(placeholder, abbrev)
 
-    # Remove remaining quality tags from series title
     quality_tags_series = [
         r'1080p', r'720p', r'480p', r'4K', r'UHD', r'HDR', r'WEB-DL', r'BluRay', r'BDRip', r'DVDRip',
         r'x264', r'x265', r'HEVC', r'AAC', r'DTS', r'AC3', r'5\.1', r'2\.0', r'\d+Kbps', r'MSubs',
@@ -208,7 +192,6 @@ def extract_series_info(filename):
     series_title = re.sub(quality_pattern, '',
                           series_title, flags=re.IGNORECASE)
 
-    # Remove years from series title (e.g., "2014", "2022")
     series_title = re.sub(r'\b\d{4}\b', '', series_title)
 
     series_title = re.sub(r'\s*-\s*[A-Z0-9]+$', '', series_title)
@@ -225,11 +208,9 @@ def filter_and_remux(file_path):
 
     if series_title and season_episode_tag:
         if episode_title:
-            # Use actual episode title
             output_name = f"{series_title} - {season_episode_tag} - {episode_title}.mkv"
             title_for_mkv = f"{series_title} - {season_episode_tag} - {episode_title}"
         else:
-            # Fallback to episode number format
             output_name = f"{series_title} - {season_episode_tag} - Episode #{season_num}.{episode_num}.mkv"
             title_for_mkv = f"{series_title} - {season_episode_tag} - Episode #{season_num}.{episode_num}"
     else:
