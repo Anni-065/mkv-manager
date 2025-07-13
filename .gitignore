@@ -16,8 +16,12 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 .env
 # OS files
 .DS_Store
 Thumbs.db
 desktop.ini
+# Backup files
+backups/
+*.backup
