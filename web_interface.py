@@ -79,15 +79,20 @@ def configure():
 
 @app.route('/files')
 def list_files():
-    """List MKV files in the configured folder"""
+    """List MKV files in the configured folder or custom path"""
     try:
-        if not os.path.exists(config['MKV_FOLDER']):
-            return jsonify({'error': 'MKV folder does not exist'})
+        # Check for custom path parameter
+        custom_path = request.args.get('path')
+        folder_path = custom_path if custom_path else config['MKV_FOLDER']
+
+        if not os.path.exists(folder_path):
+            error_msg = f"Folder does not exist: {folder_path}"
+            return jsonify({'error': error_msg})
 
         files = []
-        for file in os.listdir(config['MKV_FOLDER']):
+        for file in os.listdir(folder_path):
             if file.lower().endswith('.mkv'):
-                file_path = os.path.join(config['MKV_FOLDER'], file)
+                file_path = os.path.join(folder_path, file)
                 file_info = {
                     'name': file,
                     'size': os.path.getsize(file_path),
@@ -104,7 +109,7 @@ def list_files():
 
                 files.append(file_info)
 
-        return jsonify({'files': files})
+        return jsonify({'files': files, 'folder_path': folder_path})
     except Exception as e:
         return jsonify({'error': str(e)})
 
@@ -115,6 +120,15 @@ def process_files():
     if processing_status['is_running']:
         return jsonify({'error': 'Processing is already running'})
 
+    # Get custom path from request if provided
+    request_data = request.get_json() or {}
+    custom_path = request_data.get('custom_path')
+    source_folder = custom_path if custom_path else config['MKV_FOLDER']
+
+    # Validate the source folder exists
+    if not os.path.exists(source_folder):
+        return jsonify({'error': f'Source folder does not exist: {source_folder}'})
+
     update_mkv_cleaner_config()
 
     def process_thread():
@@ -123,9 +137,22 @@ def process_files():
             processing_status['log'] = []
             processing_status['progress'] = 0
 
+            # Log which folder is being processed
+            if custom_path:
+                processing_status['log'].append(
+                    f"📁 Using custom path: {custom_path}")
+            else:
+                processing_status['log'].append(
+                    f"📁 Using default path: {config['MKV_FOLDER']}")
+
             mkv_files = [f for f in os.listdir(
-                config['MKV_FOLDER']) if f.lower().endswith('.mkv')]
+                source_folder) if f.lower().endswith('.mkv')]
             processing_status['total_files'] = len(mkv_files)
+
+            if len(mkv_files) == 0:
+                processing_status['log'].append(
+                    "⚠️ No MKV files found in the specified folder")
+                return
 
             for i, file in enumerate(mkv_files):
                 processing_status['current_file'] = file
@@ -133,7 +160,7 @@ def process_files():
 
                 try:
                     full_path = os.path.normpath(
-                        os.path.join(config['MKV_FOLDER'], file))
+                        os.path.join(source_folder, file))
                     processing_status['log'].append(f"Processing: {file}")
                     filter_and_remux(full_path)
                     processing_status['log'].append(f"✓ Completed: {file}")
@@ -143,7 +170,7 @@ def process_files():
 
             processing_status['progress'] = len(mkv_files)
             processing_status['current_file'] = ''
-            processing_status['log'].append("All files processed!")
+            processing_status['log'].append("🎉 All files processed!")
 
         except Exception as e:
             processing_status['log'].append(f"✗ Fatal error: {str(e)}")
@@ -197,6 +224,10 @@ def browse_files():
             })
 
         for item in os.listdir(path):
+            # Skip hidden folders/files that start with a dot
+            if item.startswith('.'):
+                continue
+
             item_path = os.path.join(path, item)
             try:
                 if os.path.isdir(item_path):

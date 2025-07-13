@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- This is a Jinja2 template file -->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -6,12 +7,11 @@
     <title>MKV Cleaner - Web Interface</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   </head>
-  <body>
+  <body data-default-mkv-folder="{{ config.MKV_FOLDER }}">
     <div class="container">
       <h1>🎬 MKV Cleaner - Web Interface</h1>
 
       <div class="nav">
-        <a href="/">Home</a>
         <a href="/config">⚙️ Edit Paths</a>
       </div>
 
@@ -27,7 +27,7 @@
       <div class="section">
         <h2>Current Configuration</h2>
         <div class="config-info">
-          <p><strong>MKV Folder:</strong> {{ config.MKV_FOLDER }}</p>
+          <p><strong>Default MKV Folder:</strong> {{ config.MKV_FOLDER }}</p>
           <p>
             <strong>Allowed Audio Languages:</strong> {{
             config.ALLOWED_AUDIO_LANGS | join(', ') }}
@@ -43,6 +43,7 @@
           </p>
         </div>
       </div>
+
 
       <div class="section">
         <h2>Language Settings</h2>
@@ -78,7 +79,6 @@
                 </div>
               </div>
             </div>
-            
             <div>
               <label style="display: block; margin-bottom: 10px; font-weight: bold; color: #34495e;">Allowed Subtitle Languages:</label>
               <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -166,6 +166,38 @@
       </div>
 
       <div class="section">
+        <h2>📁 Source Folder Override</h2>
+        <p style="color: #666; margin-bottom: 15px;">
+          <em>Leave empty to use default folder, or specify a different folder for this processing job only.</em>
+        </p>
+        <form id="path-override-form">
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 3px;">
+            <input
+              type="text"
+              id="custom-path"
+              placeholder="Enter custom MKV folder path (optional)..."
+              style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+            />
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="selectCustomFolder()"
+            >
+              📁 Browse
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="clearCustomPath()"
+            >
+              🔄 Use Default
+            </button>
+          </div>
+          <div id="custom-path-status" style="font-size: 12px; color: #666;"></div>
+        </form>
+      </div>
+
+      <div class="section">
         <h2>MKV Files</h2>
         <button class="btn btn-primary" onclick="loadFiles()">
           🔄 Refresh File List
@@ -207,124 +239,44 @@
       </div>
     </div>
 
-    <script>
-      let statusInterval;
+    <div id="fileBrowserModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>📁 Browse for Folder</h3>
+          <button onclick="closeFileBrowser()" class="modal-close">❌</button>
+        </div>
 
-      function loadFiles() {
-        fetch("/files")
-          .then((response) => response.json())
-          .then((data) => {
-            const container = document.getElementById("files-container");
-            if (data.error) {
-              container.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
-              return;
-            }
+        <div class="modal-controls">
+          <select id="driveSelector" onchange="changeDrive()">
+            <option value="">Loading drives...</option>
+          </select>
+          <button onclick="goToParentFolder()" class="btn btn-secondary">
+            📁 Up
+          </button>
+          <button onclick="refreshCurrentFolder()" class="btn btn-secondary">
+            🔄 Refresh
+          </button>
+        </div>
 
-            if (data.files.length === 0) {
-              container.innerHTML =
-                "<p>No MKV files found in the configured folder.</p>";
-              return;
-            }
+        <div style="margin-bottom: 15px">
+          <strong>Current Path:</strong> <span id="currentPath"></span>
+        </div>
 
-            container.innerHTML = data.files
-              .map(
-                (file) => `
-                        <div class="file-item">
-                            <div class="file-info">
-                                <div class="file-name">${file.name}</div>
-                                <div class="file-details">
-                                    Series: ${file.series_title} | Episode: ${
-                  file.season_episode
-                } | 
-                                    Size: ${(file.size / 1024 / 1024).toFixed(
-                                      1
-                                    )} MB | 
-                                    Modified: ${file.modified}
-                                </div>
-                            </div>
-                        </div>
-                    `
-              )
-              .join("");
-          })
-          .catch((error) => {
-            document.getElementById(
-              "files-container"
-            ).innerHTML = `<p style="color: red;">Error loading files: ${error.message}</p>`;
-          });
-      }
+        <div id="folderList" class="folder-list">
+          <div>Loading...</div>
+        </div>
 
-      function startProcessing() {
-        fetch("/process", { method: "POST" })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.error) {
-              alert("Error: " + data.error);
-              return;
-            }
+        <div class="modal-footer">
+          <button onclick="selectCurrentFolder()" class="btn btn-primary">
+            ✅ Select This Folder
+          </button>
+          <button onclick="closeFileBrowser()" class="btn btn-secondary">
+            ❌ Cancel
+          </button>
+        </div>
+      </div>
+    </div>
 
-            document.getElementById("start-btn").style.display = "none";
-            document.getElementById("stop-btn").style.display = "inline-block";
-            document.getElementById("progress-container").style.display =
-              "block";
-            document.getElementById("log-container").style.display = "block";
-
-            statusInterval = setInterval(updateStatus, 1000);
-          })
-          .catch((error) => {
-            alert("Error starting processing: " + error.message);
-          });
-      }
-
-      function stopProcessing() {
-        fetch("/stop", { method: "POST" })
-          .then((response) => response.json())
-          .then((data) => {
-            clearInterval(statusInterval);
-            resetUI();
-          });
-      }
-
-      function updateStatus() {
-        fetch("/status")
-          .then((response) => response.json())
-          .then((status) => {
-            const progressFill = document.getElementById("progress-fill");
-            const progressText = document.getElementById("progress-text");
-            const log = document.getElementById("log");
-
-            if (status.total_files > 0) {
-              const percentage = (status.progress / status.total_files) * 100;
-              progressFill.style.width = percentage + "%";
-              progressText.textContent = `Processing ${status.progress}/${status.total_files} files`;
-
-              if (status.current_file) {
-                progressText.textContent += ` - Current: ${status.current_file}`;
-              }
-            }
-
-            log.innerHTML = status.log
-              .map((entry) => `<div>${entry}</div>`)
-              .join("");
-            log.scrollTop = log.scrollHeight;
-
-            if (!status.is_running && status.progress > 0) {
-              clearInterval(statusInterval);
-              resetUI();
-              progressText.textContent = "Processing completed!";
-            }
-          });
-      }
-
-      function resetUI() {
-        document.getElementById("start-btn").style.display = "inline-block";
-        document.getElementById("stop-btn").style.display = "none";
-      }
-
-      // Load files on page load
-      window.onload = function () {
-        loadFiles();
-      };
-    </script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
   </body>
 </html>
