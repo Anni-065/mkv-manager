@@ -1,0 +1,23 @@
+# Personal configuration files
+config.json
+personal_config.py
+*.log
+processed/
+mkv_process_log.txt
+# Test files
+test_*.py
+# IDE files
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
