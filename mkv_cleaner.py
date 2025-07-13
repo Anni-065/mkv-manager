@@ -1,19 +1,20 @@
 import os
 import subprocess
+import json
 from datetime import datetime
 import re
 
 try:
     from config import *
-    print("✅ Using personal_config.py")
+    print("✅ Using personal config.py")
 except ImportError:
     try:
         from config_example import *
-        print("⚠️ Using config_example.py - Consider creating personal_config.py")
+        print("⚠️ Using config_example.py - Consider creating a personal config.py")
     except ImportError:
         print("❌ No configuration file found!")
         raise ImportError(
-            "Please create personal_config.py or ensure config_example.py exists")
+            "Please create config.py or ensure config_example.py exists")
 
 assert os.path.isfile(
     MKVMERGE_PATH), f"Cannot find mkvmerge at {MKVMERGE_PATH}"
@@ -33,7 +34,6 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 
 def get_track_info(file_path):
-    import json
     file_path = os.path.normpath(file_path)
     cmd = [MKVMERGE_PATH, "-J", file_path]
     result = subprocess.run(cmd, capture_output=True, text=True)

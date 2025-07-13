@@ -6,18 +6,30 @@ import threading
 from datetime import datetime
 import shutil
 
+try:
+    from config import *
+    print("✅ Web interface using config.py")
+except ImportError:
+    try:
+        from config_example import *
+        print("⚠️ Web interface using config_example.py - Consider creating config.py")
+    except ImportError:
+        print("❌ No configuration file found!")
+        raise ImportError(
+            "Please create config.py or ensure config_example.py exists")
+
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 config = {
-    'MKVMERGE_PATH': r"/usr/bin/mkvmerge",
-    'MKV_FOLDER': r"/path/to/mkv/source",
-    'ALLOWED_SUB_LANGS': ["eng", "ger", "kor", "gre"],
-    'ALLOWED_AUDIO_LANGS': ["kor"],
-    'DEFAULT_AUDIO_LANG': "kor",
-    'DEFAULT_SUBTITLE_LANG': "eng",
-    'ORIGINAL_AUDIO_LANG': "kor",
-    'ORIGINAL_SUBTITLE_LANG': "kor"
+    'MKVMERGE_PATH': MKVMERGE_PATH,
+    'MKV_FOLDER': MKV_FOLDER,
+    'ALLOWED_SUB_LANGS': list(ALLOWED_SUB_LANGS),
+    'ALLOWED_AUDIO_LANGS': list(ALLOWED_AUDIO_LANGS),
+    'DEFAULT_AUDIO_LANG': DEFAULT_AUDIO_LANG,
+    'DEFAULT_SUBTITLE_LANG': DEFAULT_SUBTITLE_LANG,
+    'ORIGINAL_AUDIO_LANG': ORIGINAL_AUDIO_LANG,
+    'ORIGINAL_SUBTITLE_LANG': ORIGINAL_SUBTITLE_LANG
 }
 
 processing_status = {
