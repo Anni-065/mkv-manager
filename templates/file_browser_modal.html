@@ -1,0 +1,64 @@
+<div id="fileBrowserModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>📁 Browse for Folder</h3>
+      <button onclick="closeFileBrowser()" class="modal-close">❌</button>
+    </div>
+
+    <div class="modal-controls">
+      <div style="margin-bottom: 10px">
+        <strong>Quick Access:</strong>
+        <button onclick="goToDocuments()" class="btn btn-small">
+          📄 Documents
+        </button>
+        <button onclick="goToDownloads()" class="btn btn-small">
+          ⬇️ Downloads
+        </button>
+        <button onclick="goToDesktop()" class="btn btn-small">
+          🖥️ Desktop
+        </button>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center">
+        <select id="driveSelector" onchange="changeDrive()" style="flex: 1">
+          <option value="">Loading drives...</option>
+        </select>
+        <button onclick="goToParentFolder()" class="btn btn-secondary">
+          📁 Up
+        </button>
+        <button onclick="refreshCurrentFolder()" class="btn btn-secondary">
+          🔄 Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-path-info">
+      <strong>📍 Current Path:</strong><br />
+      <code id="currentPath" class="path-display"></code>
+      <div class="path-hint">
+        💡
+        <em
+          >Click "Select This Folder" below to use this path, or click a folder
+          to navigate into it.</em
+        >
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <div id="folderList" class="folder-list">
+        <div>Loading...</div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="path-preview">
+        🎯 <strong>Ready to select:</strong> <span id="pathPreview"></span>
+      </div>
+      <button onclick="selectCurrentFolder()" class="btn btn-primary">
+        ✅ Select This Folder
+      </button>
+      <button onclick="closeFileBrowser()" class="btn btn-secondary">
+        ❌ Cancel
+      </button>
+    </div>
+  </div>
+</div>

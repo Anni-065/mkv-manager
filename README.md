@@ -6,7 +6,8 @@ A Python-based tool for batch processing MKV files with intelligent filename par
 
 - **Intelligent Filename Parsing**: Automatically extracts series titles, season/episode numbers, and episode titles from various filename formats
 - **Track Filtering**: Remove or keep specific audio and subtitle tracks based on language preferences
-- **Web Interface**: Modern Flask-based web UI for configuration and batch processing
+- **Web Interface**: Modern Flask-based web UI with drag & drop support for easy file processing
+- **Drag & Drop Support**: Simply drag MKV files onto the web interface to process them instantly
 - **Quality Detection**: Recognizes quality indicators (1080p, WEB-DL, etc.) and separates them from episode titles
 - **Batch Processing**: Process multiple MKV files with progress tracking and logging
 
@@ -49,6 +50,17 @@ A Python-based tool for batch processing MKV files with intelligent filename par
 3. Configure paths and language settings
 
 4. Process your MKV files through the web interface
+
+#### Using Drag & Drop (New Feature!)
+
+The web interface now supports drag & drop functionality for easy file processing:
+
+1. **Drag Files**: Simply drag individual .mkv files from your file explorer directly onto the blue drop zone on the main page
+2. **Click to Browse**: Alternatively, click the drop zone to open a file browser and select multiple .mkv files
+3. **Process**: Click "Process Dropped Files" to start processing the uploaded files immediately
+4. **Monitor Progress**: Watch the real-time progress and logs as your files are processed
+
+**Note**: Due to browser security restrictions, you cannot drop entire folders. Use the "Browse" button in the "Source Folder Override" section to select a folder containing MKV files.
 
 ### Command Line
 

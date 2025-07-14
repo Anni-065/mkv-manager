@@ -27,7 +27,7 @@
       <div class="section">
         <h2>Current Configuration</h2>
         <div class="config-info">
-          <p><strong>Default MKV Folder:</strong> {{ config.MKV_FOLDER }}</p>
+          <p><strong>Default Destination Folder:</strong> {{ config.MKV_FOLDER }}</p>
           <p>
             <strong>Allowed Audio Languages:</strong> {{
             config.ALLOWED_AUDIO_LANGS | join(', ') }}
@@ -166,56 +166,48 @@
       </div>
 
       <div class="section">
-        <h2>📁 Source Folder Override</h2>
+        <h2>📁 Add Files to Process</h2>
         <p style="color: #666; margin-bottom: 15px;">
-          <em>Leave empty to use default folder, or specify a different folder for this processing job only.</em>
+          <em>Add individual MKV files or entire folders to process. Processed files will be saved in a "processed" folder next to the original files.</em>
         </p>
-        <form id="path-override-form">
-          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 3px;">
-            <input
-              type="text"
-              id="custom-path"
-              placeholder="Enter custom MKV folder path (optional)..."
-              style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
-            />
-            <button
-              type="button"
-              class="btn btn-secondary"
-              onclick="selectCustomFolder()"
-            >
-              📁 Browse
+        
+        <!-- Drag & Drop Zone -->
+        <div id="dropZone" class="drop-zone">
+          <div class="drop-zone-content">
+            <div class="drop-zone-icon">📁</div>
+            <div class="drop-zone-text">
+              <strong>Drag & Drop Files or Folders, or Click to Browse</strong>
+              <p>Drop individual .mkv files or entire folders here, or click to browse</p>
+              <p style="font-size: 0.8rem; margin-top: 0.5rem; color: #888;">
+                💡 <em>Folders are fully supported - just drag them directly from your file manager!</em>
+              </p>
+            </div>
+          </div>
+          <div id="dropZoneOverlay" class="drop-zone-overlay">
+            <div class="drop-zone-overlay-content">
+              <div class="drop-zone-overlay-icon">📂</div>
+              <div class="drop-zone-overlay-text">Release to add files</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dropped Files Display -->
+        <div id="droppedFilesSection" class="dropped-files-section" style="display: none;">
+          <h3>📋 Dropped Files</h3>
+          <div id="droppedFilesList" class="dropped-files-list"></div>
+          <div class="dropped-files-actions">
+            <button type="button" class="btn btn-primary" onclick="processDroppedFiles()">
+              ▶️ Process Dropped Files
             </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              onclick="clearCustomPath()"
-            >
-              🔄 Use Default
+            <button type="button" class="btn btn-secondary" onclick="clearDroppedFiles()">
+              🗑️ Clear All
             </button>
           </div>
-          <div id="custom-path-status" style="font-size: 12px; color: #666;"></div>
-        </form>
-      </div>
-
-      <div class="section">
-        <h2>MKV Files</h2>
-        <button class="btn btn-primary" onclick="loadFiles()">
-          🔄 Refresh File List
-        </button>
-        <div id="files-container" class="files-list" style="margin-top: 15px">
-          <p>Click "Refresh File List" to load files...</p>
         </div>
       </div>
 
       <div class="section">
         <h2>Processing</h2>
-        <button
-          id="start-btn"
-          class="btn btn-primary"
-          onclick="startProcessing()"
-        >
-          ▶️ Start Processing
-        </button>
         <button
           id="stop-btn"
           class="btn btn-danger"
@@ -239,44 +231,9 @@
       </div>
     </div>
 
-    <div id="fileBrowserModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>📁 Browse for Folder</h3>
-          <button onclick="closeFileBrowser()" class="modal-close">❌</button>
-        </div>
+    {% include 'file_browser_modal.html' %}
 
-        <div class="modal-controls">
-          <select id="driveSelector" onchange="changeDrive()">
-            <option value="">Loading drives...</option>
-          </select>
-          <button onclick="goToParentFolder()" class="btn btn-secondary">
-            📁 Up
-          </button>
-          <button onclick="refreshCurrentFolder()" class="btn btn-secondary">
-            🔄 Refresh
-          </button>
-        </div>
-
-        <div style="margin-bottom: 15px">
-          <strong>Current Path:</strong> <span id="currentPath"></span>
-        </div>
-
-        <div id="folderList" class="folder-list">
-          <div>Loading...</div>
-        </div>
-
-        <div class="modal-footer">
-          <button onclick="selectCurrentFolder()" class="btn btn-primary">
-            ✅ Select This Folder
-          </button>
-          <button onclick="closeFileBrowser()" class="btn btn-secondary">
-            ❌ Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-
+    <script src="{{ url_for('static', filename='file_browser_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
   </body>
 </html>

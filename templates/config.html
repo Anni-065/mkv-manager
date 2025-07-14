@@ -44,13 +44,6 @@
               >
                 📁 Set Folder Path
               </button>
-              <button
-                type="button"
-                class="btn btn-secondary"
-                onclick="openExplorer('mkvmerge_path')"
-              >
-                🪟 Open Folder
-              </button>
             </div>
             <div class="help-text">
               Path to mkvmerge.exe (usually in C:\Program Files\MKVToolNix\)
@@ -74,13 +67,6 @@
                 onclick="openFileBrowser('mkv_folder')"
               >
                 📁 Set Folder Path
-              </button>
-              <button
-                type="button"
-                class="btn btn-secondary"
-                onclick="openExplorer('mkv_folder')"
-              >
-                🪟 Open Folder
               </button>
             </div>
             <div class="help-text">
@@ -118,44 +104,9 @@
     </div>
 
     <!-- File Browser Modal -->
-    <div id="fileBrowserModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>📁 Browse for Folder</h3>
-          <button onclick="closeFileBrowser()" class="modal-close">❌</button>
-        </div>
+    {% include 'file_browser_modal.html' %}
 
-        <div class="modal-controls">
-          <select id="driveSelector" onchange="changeDrive()">
-            <option value="">Loading drives...</option>
-          </select>
-          <button onclick="goToParentFolder()" class="btn btn-secondary">
-            📁 Up
-          </button>
-          <button onclick="refreshCurrentFolder()" class="btn btn-secondary">
-            🔄 Refresh
-          </button>
-        </div>
-
-        <div style="margin-bottom: 15px">
-          <strong>Current Path:</strong> <span id="currentPath"></span>
-        </div>
-
-        <div id="folderList" class="folder-list">
-          <div>Loading...</div>
-        </div>
-
-        <div class="modal-footer">
-          <button onclick="selectCurrentFolder()" class="btn btn-primary">
-            ✅ Select This Folder
-          </button>
-          <button onclick="closeFileBrowser()" class="btn btn-secondary">
-            ❌ Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-
+    <script src="{{ url_for('static', filename='file_browser_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='config.js') }}"></script>
   </body>
 </html>

@@ -55,7 +55,6 @@ def update_mkv_cleaner_config():
     mkv_cleaner.ORIGINAL_SUBTITLE_LANG = config['ORIGINAL_SUBTITLE_LANG']
     mkv_cleaner.LOG_FILE = os.path.join(
         mkv_cleaner.OUTPUT_FOLDER, "mkv_process_log.txt")
-    os.makedirs(mkv_cleaner.OUTPUT_FOLDER, exist_ok=True)
 
 
 @app.route('/')
@@ -81,7 +80,6 @@ def configure():
 def list_files():
     """List MKV files in the configured folder or custom path"""
     try:
-        # Check for custom path parameter
         custom_path = request.args.get('path')
         folder_path = custom_path if custom_path else config['MKV_FOLDER']
 
@@ -120,12 +118,10 @@ def process_files():
     if processing_status['is_running']:
         return jsonify({'error': 'Processing is already running'})
 
-    # Get custom path from request if provided
     request_data = request.get_json() or {}
     custom_path = request_data.get('custom_path')
     source_folder = custom_path if custom_path else config['MKV_FOLDER']
 
-    # Validate the source folder exists
     if not os.path.exists(source_folder):
         return jsonify({'error': f'Source folder does not exist: {source_folder}'})
 
@@ -137,7 +133,11 @@ def process_files():
             processing_status['log'] = []
             processing_status['progress'] = 0
 
-            # Log which folder is being processed
+            import mkv_cleaner
+            os.makedirs(mkv_cleaner.OUTPUT_FOLDER, exist_ok=True)
+            processing_status['log'].append(
+                f"📁 Created output folder: {mkv_cleaner.OUTPUT_FOLDER}")
+
             if custom_path:
                 processing_status['log'].append(
                     f"📁 Using custom path: {custom_path}")
@@ -217,14 +217,13 @@ def browse_files():
         if path != os.path.dirname(path):
             parent = os.path.dirname(path)
             items.append({
-                'name': '.. (Parent Directory)',
+                'name': '.. (Back)',
                 'path': parent,
                 'type': 'parent',
-                'icon': '📁'
+                'icon': '⬅️'
             })
 
         for item in os.listdir(path):
-            # Skip hidden folders/files that start with a dot
             if item.startswith('.'):
                 continue
 
@@ -291,7 +290,6 @@ def get_drives():
             drive_path = f'{letter}:\\'
             if os.path.exists(drive_path):
                 try:
-                    # Try to get some basic info about the drive
                     total, used, free = shutil.disk_usage(drive_path)
                     drives.append({
                         'letter': letter,
@@ -301,7 +299,6 @@ def get_drives():
                         'used': used
                     })
                 except:
-                    # If we can't get disk usage, just add the drive
                     drives.append({
                         'letter': letter,
                         'path': drive_path,
@@ -330,7 +327,6 @@ def get_user_home():
 def update_settings():
     """Update language settings from the home page"""
     if request.method == 'POST':
-        # Update language configuration
         config['ALLOWED_SUB_LANGS'] = request.form.getlist('allowed_sub_langs')
         config['ALLOWED_AUDIO_LANGS'] = request.form.getlist(
             'allowed_audio_langs')
@@ -347,8 +343,187 @@ def update_settings():
         return redirect(url_for('index'))
 
 
+@app.route('/process_dropped_files', methods=['POST'])
+def process_dropped_files():
+    """Process files that were dropped onto the drag & drop zone"""
+    if processing_status['is_running']:
+        return jsonify({'error': 'Processing is already running'})
+
+    try:
+        if 'files' in request.get_json() if request.is_json else False:
+            data = request.get_json()
+            file_paths = data['files']
+
+            return process_files_from_paths(file_paths)
+        else:
+            return process_uploaded_files()
+
+    except Exception as e:
+        return jsonify({'error': f'Error processing dropped files: {str(e)}'})
+
+
+def process_files_from_paths(file_paths):
+    """Process files from their original file paths (folder browsing)"""
+    if not file_paths:
+        return jsonify({'error': 'No valid file paths provided'})
+
+    valid_files = []
+    for file_path in file_paths:
+        if os.path.exists(file_path) and file_path.lower().endswith('.mkv'):
+            valid_files.append(file_path)
+
+    if not valid_files:
+        return jsonify({'error': 'No valid MKV files found'})
+
+    update_mkv_cleaner_config()
+
+    def process_thread():
+        try:
+            processing_status['is_running'] = True
+            processing_status['log'] = []
+            processing_status['progress'] = 0
+            processing_status['total_files'] = len(valid_files)
+
+            files_by_directory = {}
+            for file_path in valid_files:
+                directory = os.path.dirname(file_path)
+                if directory not in files_by_directory:
+                    files_by_directory[directory] = []
+                files_by_directory[directory].append(file_path)
+
+            processing_status['log'].append(
+                f"📁 Processing {len(valid_files)} files from {len(files_by_directory)} directories")
+
+            processed_count = 0
+            for directory, files_in_dir in files_by_directory.items():
+                try:
+                    output_folder = os.path.join(directory, "processed")
+                    os.makedirs(output_folder, exist_ok=True)
+                    processing_status['log'].append(
+                        f"📁 Created output folder: {output_folder}")
+                except (OSError, PermissionError) as e:
+                    output_folder = os.path.join(
+                        config['MKV_FOLDER'], "processed")
+                    os.makedirs(output_folder, exist_ok=True)
+                    processing_status['log'].append(
+                        f"⚠️ Could not create folder in {directory}, using default: {output_folder}")
+                    processing_status['log'].append(f"   Reason: {str(e)}")
+
+                for file_path in files_in_dir:
+                    filename = os.path.basename(file_path)
+                    processing_status['current_file'] = filename
+                    processing_status['progress'] = processed_count
+
+                    try:
+                        processing_status['log'].append(
+                            f"Processing: {filename}")
+
+                        import mkv_cleaner
+                        mkv_cleaner.OUTPUT_FOLDER = output_folder
+
+                        filter_and_remux(file_path)
+                        processing_status['log'].append(
+                            f"✓ Completed: {filename}")
+                    except Exception as e:
+                        processing_status['log'].append(
+                            f"✗ Error processing {filename}: {str(e)}")
+
+                    processed_count += 1
+
+            processing_status['progress'] = len(valid_files)
+            processing_status['current_file'] = ''
+            processing_status['log'].append("🎉 All files processed!")
+
+        except Exception as e:
+            processing_status['log'].append(f"✗ Fatal error: {str(e)}")
+        finally:
+            processing_status['is_running'] = False
+
+    thread = threading.Thread(target=process_thread)
+    thread.daemon = True
+    thread.start()
+
+    return jsonify({'success': True, 'message': 'File processing started'})
+
+
+def process_uploaded_files():
+    """Process files that were actually uploaded (drag & drop)"""
+    uploaded_files = []
+
+    temp_dir = os.path.join(config['MKV_FOLDER'], 'temp_uploads')
+    os.makedirs(temp_dir, exist_ok=True)
+
+    for key in request.files:
+        file = request.files[key]
+
+        if file and file.filename.lower().endswith('.mkv'):
+            filename = file.filename
+            filename = os.path.basename(filename)
+            file_path = os.path.join(temp_dir, filename)
+
+            file.save(file_path)
+            uploaded_files.append(file_path)
+
+    if not uploaded_files:
+        return jsonify({'error': 'No valid MKV files were uploaded'})
+
+    update_mkv_cleaner_config()
+
+    def process_thread():
+        try:
+            processing_status['is_running'] = True
+            processing_status['log'] = []
+            processing_status['progress'] = 0
+            processing_status['total_files'] = len(uploaded_files)
+
+            output_folder = os.path.join(config['MKV_FOLDER'], "processed")
+            os.makedirs(output_folder, exist_ok=True)
+            processing_status['log'].append(
+                f"📁 Created output folder: {output_folder}")
+
+            processing_status['log'].append(
+                f"📁 Processing {len(uploaded_files)} uploaded files")
+
+            import mkv_cleaner
+            mkv_cleaner.OUTPUT_FOLDER = output_folder
+
+            for i, file_path in enumerate(uploaded_files):
+                filename = os.path.basename(file_path)
+                processing_status['current_file'] = filename
+                processing_status['progress'] = i
+
+                try:
+                    processing_status['log'].append(f"Processing: {filename}")
+                    filter_and_remux(file_path)
+                    processing_status['log'].append(f"✓ Completed: {filename}")
+                except Exception as e:
+                    processing_status['log'].append(
+                        f"✗ Error processing {filename}: {str(e)}")
+
+            processing_status['progress'] = len(uploaded_files)
+            processing_status['current_file'] = ''
+            processing_status['log'].append("🎉 All uploaded files processed!")
+
+            try:
+                shutil.rmtree(temp_dir)
+                processing_status['log'].append("🧹 Temporary files cleaned up")
+            except Exception as e:
+                processing_status['log'].append(
+                    f"⚠️ Warning: Could not clean up temp files: {str(e)}")
+
+        except Exception as e:
+            processing_status['log'].append(f"✗ Fatal error: {str(e)}")
+        finally:
+            processing_status['is_running'] = False
+
+    thread = threading.Thread(target=process_thread)
+    thread.daemon = True
+    thread.start()
+
+    return jsonify({'success': True, 'message': 'Uploaded files processing started'})
+
+
 if __name__ == '__main__':
-    # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)
 
     print("Starting MKV Cleaner Web Interface...")

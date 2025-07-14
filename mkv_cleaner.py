@@ -30,8 +30,6 @@ LANG_TITLES = {
     "und": "",
 }
 
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
 
 def get_track_info(file_path):
     file_path = os.path.normpath(file_path)
@@ -201,6 +199,8 @@ def extract_series_info(filename):
 
 
 def filter_and_remux(file_path):
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
     base_name = os.path.splitext(os.path.basename(file_path))[0]
 
     series_title, season_episode_tag, season_num, episode_num, episode_title = extract_series_info(
