@@ -3,13 +3,17 @@ import subprocess
 import json
 from datetime import datetime
 import re
+from .constants import (
+    LANG_TITLES, QUALITY_TAGS, QUALITY_PATTERNS, QUALITY_TAGS_SERIES,
+    ABBREVIATIONS, SEASON_EPISODE_PATTERN, QUALITY_PATTERN_SERIES, SOURCE_PATTERN
+)
 
 try:
-    from config import *
+    from .config import *
     print("✅ Using personal config.py")
 except ImportError:
     try:
-        from config_example import *
+        from .config_example import *
         print("⚠️ Using config_example.py - Consider creating a personal config.py")
     except ImportError:
         print("❌ No configuration file found!")
@@ -20,15 +24,6 @@ assert os.path.isfile(
     MKVMERGE_PATH), f"Cannot find mkvmerge at {MKVMERGE_PATH}"
 
 LOG_FILE = os.path.join(OUTPUT_FOLDER, "mkv_process_log.txt")
-
-LANG_TITLES = {
-    "eng": "English",
-    "ger": "German",
-    "kor": "Korean",
-    "jpn": "Japanese",
-    "gre": "Greek",
-    "und": "",
-}
 
 
 def get_track_info(file_path):
@@ -46,7 +41,8 @@ def get_track_info(file_path):
                 "type": track["type"],
                 "lang": track["properties"].get("language", "und"),
                 "forced": track["properties"].get("forced_track", False),
-                "hearing_impaired": track["properties"].get("hearing_impaired_flag", False)
+                "hearing_impaired": track["properties"].get("hearing_impaired_flag", False),
+                "track_name": track["properties"].get("track_name", "")
             })
         return tracks
     except json.JSONDecodeError:
@@ -54,8 +50,11 @@ def get_track_info(file_path):
         return []
 
 
-def log_entry(file_name, changes):
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
+def log_entry(file_name, changes, log_file=None):
+    if log_file is None:
+        log_file = LOG_FILE
+
+    with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"\n[{datetime.now()}] {file_name}\n")
         for line in changes:
             f.write(f"  - {line}\n")
@@ -64,8 +63,7 @@ def log_entry(file_name, changes):
 def extract_series_info(filename):
     base_name = os.path.splitext(filename)[0]
 
-    season_episode_pattern = r'[Ss](\d+)[Ee](\d+)'
-    season_episode_match = re.search(season_episode_pattern, base_name)
+    season_episode_match = re.search(SEASON_EPISODE_PATTERN, base_name)
 
     if not season_episode_match:
         return None, None, None, None, None
@@ -105,28 +103,10 @@ def extract_series_info(filename):
         if remainder.startswith('.') or remainder.startswith(' ') or remainder.startswith('-') or remainder.startswith('_'):
             remainder = remainder[1:]
 
-        quality_tags = [
-            r'1080p', r'720p', r'480p', r'4K', r'UHD', r'HDR', r'WEB-DL', r'BluRay', r'BDRip', r'DVDRip',
-            r'x264', r'x265', r'HEVC', r'AAC', r'DTS', r'AC3', r'5\.1', r'2\.0', r'\d+Kbps', r'MSubs',
-            r'NF', r'AMZN', r'HULU', r'DSNP', r'HBO', r'PARAMOUNT', r'APPLE', r'PEACOCK', r'SHOWTIME',
-            r'STARZ', r'VUDU', r'FANDANGO', r'ROKU', r'TUBI', r'CRACKLE', r'PLUTO', r'FREEVEE', r'REDBOX',
-            r'Webrip', r'WebRip', r'WEBRip', r'10bit', r'8bit', r'EAC3', r'DDP5', r'APEX', r'WEB'
-        ]
-
-        quality_patterns = [
-            r'\([^)]*(?:WEB|1080p|720p|480p|x264|x265|AC3|DTS|AAC)\b[^)]*\)',
-            r'\[[^]]*(?:WEB|1080p|720p|480p|x264|x265|AC3|DTS|AAC|[A-F0-9]{8})\b[^]]*\]',
-            r'(?:^|\s|[._-])(' + '|'.join(quality_tags) +
-            r')(?=\s|[._-]|$)',
-            r'\b\d{3,4}p\b',
-            r'\bx26[45]\b',
-            r'\b[A-F0-9]{8}\b'
-        ]
-
         episode_title = remainder
         earliest_match = len(remainder)
 
-        for pattern in quality_patterns:
+        for pattern in QUALITY_PATTERNS:
             match = re.search(pattern, remainder, re.IGNORECASE)
             if match:
                 earliest_match = min(earliest_match, match.start())
@@ -151,18 +131,7 @@ def extract_series_info(filename):
     if delimiter_used == '.':
         series_title = re.sub(r'(\w{3,})\.$', r'\1', series_title)
 
-    abbreviations = {
-        'K.': '###K_DOT###',
-        'Dr.': '###DR_DOT###',
-        'Mr.': '###MR_DOT###',
-        'Mrs.': '###MRS_DOT###',
-        'Ms.': '###MS_DOT###',
-        'St.': '###ST_DOT###',
-        'Jr.': '###JR_DOT###',
-        'Sr.': '###SR_DOT###'
-    }
-
-    for abbrev, placeholder in abbreviations.items():
+    for abbrev, placeholder in ABBREVIATIONS.items():
         series_title = series_title.replace(abbrev, placeholder)
 
     if delimiter_used == '.':
@@ -177,19 +146,10 @@ def extract_series_info(filename):
     if delimiter_used == '_':
         series_title = re.sub(r'[_]+', ' ', series_title)
 
-    for abbrev, placeholder in abbreviations.items():
+    for abbrev, placeholder in ABBREVIATIONS.items():
         series_title = series_title.replace(placeholder, abbrev)
 
-    quality_tags_series = [
-        r'1080p', r'720p', r'480p', r'4K', r'UHD', r'HDR', r'WEB-DL', r'BluRay', r'BDRip', r'DVDRip',
-        r'x264', r'x265', r'HEVC', r'AAC', r'DTS', r'AC3', r'5\.1', r'2\.0', r'\d+Kbps', r'MSubs',
-        r'NF', r'AMZN', r'HULU', r'DSNP', r'HBO', r'PARAMOUNT', r'APPLE', r'PEACOCK', r'SHOWTIME',
-        r'STARZ', r'VUDU', r'FANDANGO', r'ROKU', r'TUBI', r'CRACKLE', r'PLUTO', r'FREEVEE', r'REDBOX',
-        r'Episode\s+\d+', r'Ep\s+\d+', r'Part\s+\d+'
-    ]
-
-    quality_pattern = r'\s*(' + '|'.join(quality_tags_series) + r').*$'
-    series_title = re.sub(quality_pattern, '',
+    series_title = re.sub(QUALITY_PATTERN_SERIES, '',
                           series_title, flags=re.IGNORECASE)
 
     series_title = re.sub(r'\b\d{4}\b', '', series_title)
@@ -201,7 +161,25 @@ def extract_series_info(filename):
 
 
 def filter_and_remux(file_path):
-    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    source_dir = os.path.dirname(file_path)
+
+    try:
+        output_folder = os.path.join(source_dir, "processed")
+        os.makedirs(output_folder, exist_ok=True)
+        test_file = os.path.join(output_folder, "test_write.tmp")
+
+        with open(test_file, 'w') as f:
+            f.write("test")
+
+        os.remove(test_file)
+
+    except (OSError, PermissionError) as e:
+        output_folder = OUTPUT_FOLDER
+        os.makedirs(output_folder, exist_ok=True)
+
+        print(
+            f"⚠️ Could not create output folder in {source_dir}, using default: {output_folder}")
+        print(f"   Reason: {str(e)}")
 
     base_name = os.path.splitext(os.path.basename(file_path))[0]
 
@@ -219,7 +197,7 @@ def filter_and_remux(file_path):
         output_name = base_name + "_cleaned.mkv"
         title_for_mkv = base_name + "_cleaned"
 
-    output_file = os.path.join(OUTPUT_FOLDER, output_name)
+    output_file = os.path.join(output_folder, output_name)
     tracks = get_track_info(file_path)
 
     cmd = [MKVMERGE_PATH, "-o", output_file, "--title", title_for_mkv]
@@ -234,6 +212,7 @@ def filter_and_remux(file_path):
     video_tracks = []
     audio_tracks = []
     subtitle_tracks = []
+    collected_subtitles = []
 
     for t in tracks:
         tid = t["id"]
@@ -241,6 +220,7 @@ def filter_and_remux(file_path):
         lang = t["lang"]
         forced = t.get("forced", False)
         hearing_impaired = t.get("hearing_impaired", False)
+        track_name = t.get("track_name", "")
         title = LANG_TITLES.get(lang, lang)
 
         if ttype == "video":
@@ -260,10 +240,12 @@ def filter_and_remux(file_path):
                 cmd += ["--original-flag",
                         f"{tid}:{'yes' if is_original else 'no'}"]
                 cmd += ["--track-name", f"{tid}:{title}"]
+
                 if is_def:
                     change_log.append(f"Set audio {tid} [{title}] as default")
                 else:
                     change_log.append(f"Keep audio {tid} [{title}]")
+
                 if is_original:
                     change_log.append(f"Set audio {tid} [{title}] as original")
             else:
@@ -274,53 +256,74 @@ def filter_and_remux(file_path):
             is_allowed_lang = lang in ALLOWED_SUB_LANGS
 
             if is_allowed_lang or is_forced_original:
-                subtitle_tracks.append(str(tid))
-                is_default_sub = (lang == DEFAULT_SUBTITLE_LANG)
-                is_original_sub = (lang == ORIGINAL_SUBTITLE_LANG)
-
-                if forced and hearing_impaired and title:
-                    track_title = f"{title} (Forced SDH)"
-                elif forced and hearing_impaired and not title:
-                    track_title = f"{lang} (Forced SDH)"
-                elif forced and title:
-                    track_title = f"{title} (Forced)"
-                elif forced and not title:
-                    track_title = f"{lang} (Forced)"
-                elif hearing_impaired and title:
-                    track_title = f"{title} (SDH)"
-                elif hearing_impaired and not title:
-                    track_title = f"{lang} (SDH)"
-                else:
-                    track_title = title
-
-                cmd += ["--default-track",
-                        f"{tid}:{'yes' if is_default_sub else 'no'}"]
-                cmd += ["--original-flag",
-                        f"{tid}:{'yes' if is_original_sub else 'no'}"]
-                cmd += ["--track-name", f"{tid}:{track_title}"]
-
-                if forced:
-                    cmd += ["--forced-track", f"{tid}:yes"]
-                if hearing_impaired:
-                    cmd += ["--hearing-impaired-flag", f"{tid}:yes"]
-
-                if is_default_sub:
-                    change_log.append(
-                        f"Set subtitle {tid} [{track_title}] as default")
-                else:
-                    change_log.append(
-                        f"Keep subtitle track {tid} [{track_title}]")
-                if is_original_sub:
-                    change_log.append(
-                        f"Set subtitle {tid} [{track_title}] as original")
-                if forced:
-                    change_log.append(
-                        f"Preserved forced subtitle {tid} [{track_title}]")
-                if hearing_impaired:
-                    change_log.append(
-                        f"Preserved SDH subtitle {tid} [{track_title}]")
+                collected_subtitles.append({
+                    "id": tid,
+                    "lang": lang,
+                    "forced": forced,
+                    "hearing_impaired": hearing_impaired,
+                    "track_name": track_name,
+                    "title": title
+                })
             else:
                 change_log.append(f"Removed subtitle track {tid} [{title}]")
+
+    deduplicated_subtitles = deduplicate_subtitles(collected_subtitles)
+
+    for sub in deduplicated_subtitles:
+        tid = sub["id"]
+        lang = sub["lang"]
+        forced = sub["forced"]
+        hearing_impaired = sub["hearing_impaired"]
+        track_name = sub["track_name"]
+        title = sub["title"]
+
+        subtitle_tracks.append(str(tid))
+        is_default_sub = (lang == DEFAULT_SUBTITLE_LANG and not forced)
+        is_original_sub = (lang == ORIGINAL_SUBTITLE_LANG)
+
+        # Always use the standardized title from LANG_TITLES
+        base_title = LANG_TITLES.get(lang, lang)
+
+        # Build the final track title with appropriate suffixes
+        if forced and hearing_impaired:
+            track_title = f"{base_title} (Forced SDH)"
+        elif forced:
+            track_title = f"{base_title} (Forced)"
+        elif hearing_impaired:
+            track_title = f"{base_title} (SDH)"
+        else:
+            track_title = base_title
+
+        cmd += ["--default-track",
+                f"{tid}:{'yes' if is_default_sub else 'no'}"]
+        cmd += ["--original-flag",
+                f"{tid}:{'yes' if is_original_sub else 'no'}"]
+        cmd += ["--track-name", f"{tid}:{track_title}"]
+
+        if forced:
+            cmd += ["--forced-track", f"{tid}:yes"]
+        if hearing_impaired:
+            cmd += ["--hearing-impaired-flag", f"{tid}:yes"]
+
+        if is_default_sub:
+            change_log.append(
+                f"Set subtitle {tid} [{track_title}] as default")
+        else:
+            change_log.append(
+                f"Keep subtitle track {tid} [{track_title}]")
+        if is_original_sub:
+            change_log.append(
+                f"Set subtitle {tid} [{track_title}] as original")
+        if forced:
+            change_log.append(
+                f"Preserved forced subtitle {tid} [{track_title}]")
+        if hearing_impaired:
+            change_log.append(
+                f"Preserved SDH subtitle {tid} [{track_title}]")
+
+        if track_name and '[' in track_name:
+            original_source = track_name
+            change_log.append(f"Deduplicated from source: {original_source}")
 
     if video_tracks:
         cmd += ["--video-tracks", ",".join(video_tracks)]
@@ -330,15 +333,105 @@ def filter_and_remux(file_path):
         cmd += ["--subtitle-tracks", ",".join(subtitle_tracks)]
 
     cmd.append(file_path)
+
     print(f"\nProcessing: {file_path}")
     print(f"Command: {' '.join(cmd)}")
+
     subprocess.run(cmd, check=True)
+
     print(f"Saved: {output_file}")
-    log_entry(os.path.basename(file_path), change_log)
+
+    # Create log file in the same output folder
+    log_file = os.path.join(output_folder, "mkv_process_log.txt")
+    log_entry(os.path.basename(file_path), change_log, log_file)
 
 
-for file in os.listdir(MKV_FOLDER):
-    if file.lower().endswith(".mkv"):
-        full_path = os.path.normpath(os.path.join(MKV_FOLDER, file))
-        print(f"Processing file: {full_path}")
-        filter_and_remux(full_path)
+def deduplicate_subtitles(subtitle_tracks):
+    if not subtitle_tracks:
+        return subtitle_tracks
+
+    def extract_source(track_name):
+        if not track_name:
+            return None
+
+        match = re.search(SOURCE_PATTERN, track_name)
+        return match.group(1) if match else None
+
+    lang_groups = {}
+
+    for track in subtitle_tracks:
+        lang = track["lang"]
+
+        if lang not in lang_groups:
+            lang_groups[lang] = []
+
+        lang_groups[lang].append(track)
+
+    result = []
+
+    for lang, tracks in lang_groups.items():
+        if len(tracks) <= 1:
+            result.extend(tracks)
+            continue
+
+        normal_tracks = [t for t in tracks if not t["forced"]]
+        forced_tracks = [t for t in tracks if t["forced"]]
+
+        sources = {}
+        all_tracks = normal_tracks + forced_tracks
+
+        for track in all_tracks:
+            source = extract_source(track.get("track_name", ""))
+
+            if source:
+                if source not in sources:
+                    sources[source] = {"normal": [], "forced": []}
+
+                if track["forced"]:
+                    sources[source]["forced"].append(track)
+                else:
+                    sources[source]["normal"].append(track)
+
+        best_source = None
+        best_score = -1
+
+        for source, tracks_by_type in sources.items():
+            has_normal = len(tracks_by_type["normal"]) > 0
+            has_forced = len(tracks_by_type["forced"]) > 0
+
+            if has_normal and has_forced:
+                score = 100
+            elif has_normal:
+                score = 50
+            elif has_forced:
+                score = 25
+            else:
+                score = 0
+
+            if score > best_score:
+                best_score = score
+                best_source = source
+
+        if best_source and best_source in sources:
+            result.extend(sources[best_source]["normal"])
+            result.extend(sources[best_source]["forced"])
+        else:
+            if normal_tracks:
+                result.append(normal_tracks[0])
+            if forced_tracks:
+                result.append(forced_tracks[0])
+
+    return result
+
+
+def main():
+    """Main function to process all MKV files in the configured folder."""
+    for file in os.listdir(MKV_FOLDER):
+        if file.lower().endswith(".mkv"):
+            full_path = os.path.normpath(os.path.join(MKV_FOLDER, file))
+            print(f"Processing file: {full_path}")
+            filter_and_remux(full_path)
+
+
+if __name__ == "__main__":
+    main()

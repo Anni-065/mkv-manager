@@ -1,303 +1,123 @@
 # MKV Manager
 
-A Python-based tool for batch processing MKV files with intelligent filename parsing, track filtering, and a modern web interface featuring advanced drag & drop support.
+A modular Python tool for batch processing MKV files with intelligent filename parsing, track filtering, and a modern Flask web interface.
 
 ## Features
 
-- **Intelligent Filename Parsing**: Automatically extracts series titles, season/episode numbers, and episode titles from various filename formats
-- **Track Filtering**: Remove or keep specific audio and subtitle tracks based on language preferences
-- **Modern Web Interface**: Flask-based web UI with responsive design and real-time processing feedback
-- **Advanced Drag & Drop**: Full support for files AND folders - drag entire directories directly from your file manager
-- **Destination-Based Processing**: Smart workflow that creates "processed" folders next to original files automatically
-- **Quality Detection**: Recognizes quality indicators (1080p, WEB-DL, etc.) and separates them from episode titles
-- **Real-Time Progress Tracking**: Live progress bars, file counts, and detailed processing logs
-- **Flexible File Management**: Browse folders, drag individual files, or drop entire directory structures
-- **Language Customization**: Web-based configuration for audio and subtitle language preferences
+- **🎯 Intelligent Filename Parsing** - Extracts series titles, season/episode numbers, and episode titles from various formats
+- **🔄 Track Filtering** - Keep or remove audio/subtitle tracks based on language preferences
+- **🧹 Subtitle Deduplication** - Automatically removes duplicate subtitles, preferring same-source normal+forced pairs
+- **🌐 Modern Web Interface** - Flask-based UI with drag & drop support and real-time progress
+- **⚙️ Web Configuration** - Configure paths and language settings directly in the browser
+- **📦 Modular Architecture** - Core logic separated from web interface for better maintainability
+- **🗂️ Smart Organization** - Creates "processed" folders next to originals automatically
 
-## Requirements
+## Quick Start
 
-- Python 3.7+
-- MKVToolNix (mkvmerge)
-- Flask (for web interface)
-
-## Installation
-
-1. Install MKVToolNix:
-
-   - Windows: Download from https://mkvtoolnix.download/
-   - Linux: `sudo apt install mkvtoolnix` or equivalent
-   - macOS: `brew install mkvtoolnix`
-
-2. Install Python dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Configure the application:
-   - Copy `config_example.py` to `config.py`
-   - Edit the paths and settings in `config.py` to match your system
-   - **Or configure everything through the web interface** - no manual file editing required!
-
-## Usage
-
-### Web Interface (Recommended)
-
-1. Start the web interface:
-
-   ```bash
-   python web_interface.py
-   ```
-
-2. Open your browser and go to: `http://localhost:5000`
-
-3. **Configure settings directly in the web interface** - edit paths and language preferences with a user-friendly form
-
-4. Process your MKV files using multiple convenient methods
-
-#### Advanced Drag & Drop Features
-
-The web interface supports multiple ways to add files for processing:
-
-**🗂️ Folder Drag & Drop (Full Support)**
-
-- **Drag entire folders** directly from your file manager onto the drop zone
-- **Automatic scanning** of all subdirectories for MKV files
-- **Hierarchical display** showing folder structure and contained files
-- **No browser limitations** - true folder support using modern web APIs
-
-**📄 Individual File Support**
-
-- **Drag individual files** from any location
-- **Multi-select support** - select multiple files and drag them together
-- **Mixed content** - combine files and folders in the same drop operation
-
-**🔍 Integrated Folder Browser**
-
-- **Click the drop zone** to open an integrated file browser
-- **Navigate your entire system** to find MKV files
-- **Folder selection** - choose entire directories with one click
-- **Starts from your default destination** for quick access
-
-**⚡ Smart Processing Workflow**
-
-- **Destination-based processing** - creates "processed" folders automatically next to original files
-- **No file moving required** - everything stays organized in its original location
-- **Progress tracking** - live updates showing current file being processed
-
-#### Processing Your Files
-
-1. **Add files** using any of the drag & drop methods above
-2. **Review the file list** - see exactly what will be processed
-3. **Configure language settings** if needed (directly in the web interface)
-4. **Click "Process Files"** - the button shows "Processing..." while working
-5. **Monitor progress** - watch real-time progress bars and detailed logs
-6. **Files are processed** in place with "processed" folders created automatically
-
-### Command Line
-
-1. Ensure you have configured your `config.py` file (see Configuration section above)
-
-2. Run the script:
-   ```bash
-   python mkv_cleaner.py
-   ```
-
-## Configuration
-
-### Web-Based Configuration (Recommended)
-
-The easiest way to configure MKV Manager is through the web interface:
-
-1. Start the web interface: `python web_interface.py`
-2. Open `http://localhost:5000` in your browser
-3. Click "⚙️ Edit Paths" to configure:
-   - **Default Destination Folder**: Where processed files will be organized
-   - **MKVToolNix Path**: Location of your mkvmerge executable
-4. Use the main page to configure language settings:
-   - **Allowed Audio/Subtitle Languages**: Which languages to keep in processed files
-   - **Default Languages**: Preferred audio and subtitle tracks
-   - **Original Languages**: Source language settings
-
-### Manual Configuration (Alternative)
-
-If you prefer manual configuration, create your personal `config.py` file by copying the example:
+### 1. Install Dependencies
 
 ```bash
-cp config_example.py config.py
+# Install MKVToolNix
+Windows: Download from https://mkvtoolnix.download/
+# Linux: sudo apt install mkvtoolnix
+# macOS: brew install mkvtoolnix
+
+# Install Python dependencies
+pip install -r requirements.txt
 ```
 
-Then edit `config.py` with your specific settings:
+### 2. Configure
 
-### Path Configuration
+- Copy `core/config_example.py` to `core/config.py` and edit paths
+- _Or_ configure everything through the web interface
 
-- `MKVMERGE_PATH`: Full path to mkvmerge executable
-  - Windows: `r"C:\Program Files\MKVToolNix\mkvmerge.exe"`
-  - Linux/macOS: `r"/usr/bin/mkvmerge"`
-- `MKV_FOLDER`: Default destination folder (where processed files will be organized)
-- `OUTPUT_FOLDER`: Automatically set to create "processed" folders next to original files
+### 3. Run
 
-### Language Settings
+**Web Interface (Recommended):**
 
-- `ALLOWED_SUB_LANGS`: Subtitle languages to keep (e.g., `{"eng", "ger", "kor"}`)
-- `ALLOWED_AUDIO_LANGS`: Audio languages to keep (e.g., `{"kor"}`)
-- `DEFAULT_AUDIO_LANG`: Default audio track language
-- `DEFAULT_SUBTITLE_LANG`: Default subtitle track language
-- `ORIGINAL_AUDIO_LANG`: Original audio language
-- `ORIGINAL_SUBTITLE_LANG`: Original subtitle language
+```bash
+cd web/
+python app.py
+```
 
-### Example Configuration
+**Standalone Script:**
+
+```bash
+python scripts/run_cleaner.py
+```
+
+**Core Module:**
 
 ```python
-import os
-
-# Path to mkvmerge executable
-MKVMERGE_PATH = r"C:\Program Files\MKVToolNix\mkvmerge.exe"  # Windows
-# MKVMERGE_PATH = r"/usr/bin/mkvmerge"  # Linux/macOS
-
-# Default destination folder (where the web interface will start browsing)
-MKV_FOLDER = r"C:\Users\YourName\Downloads\complete"
-
-# Output is automatically managed - processed files are created next to originals
-OUTPUT_FOLDER = os.path.join(MKV_FOLDER, "processed")
-
-# Language settings
-ALLOWED_SUB_LANGS = {"eng", "ger", "kor", "gre"}
-ALLOWED_AUDIO_LANGS = {"kor"}
-
-DEFAULT_AUDIO_LANG = "kor"
-DEFAULT_SUBTITLE_LANG = "eng"
-
-ORIGINAL_AUDIO_LANG = "kor"
-ORIGINAL_SUBTITLE_LANG = "kor"
+from core.mkv_cleaner import filter_and_remux
+filter_and_remux("path/to/video.mkv")
 ```
 
 ## How It Works
 
 ### Processing Workflow
 
-1. **File Discovery**: Add files through drag & drop, folder browsing, or direct file selection
-2. **Automatic Organization**: Processed files are saved in "processed" folders created next to the original files
-3. **Intelligent Parsing**: Filenames are automatically cleaned and standardized
-4. **Track Filtering**: Audio and subtitle tracks are filtered based on your language preferences
-5. **Quality Preservation**: Video quality and encoding are maintained while optimizing file structure
+1. **File Discovery** - Add files via drag & drop or folder browsing
+2. **Filename Parsing** - Extract series info and clean quality tags
+3. **Track Filtering** - Keep only specified audio/subtitle languages
+4. **Smart Organization** - Save processed files in "processed" subfolders
 
 ### File Organization
 
-**Before Processing:**
-
 ```
-/Your/Movie/Folder/
-├── Movie.S01E01.Messy.Filename.1080p.WEB-DL.mkv
-├── Movie.S01E02.Another.Episode.1080p.WEB-DL.mkv
-└── Other files...
+/Your/Series/Folder/
+├── Series.S01E01.Messy.Filename.1080p.WEB-DL.mkv (original)
+└── processed/
+    └── Series - S01E01 - Messy Filename.mkv (cleaned)
 ```
 
-**After Processing:**
-
-```
-/Your/Movie/Folder/
-├── Movie.S01E01.Messy.Filename.1080p.WEB-DL.mkv (original untouched)
-├── Movie.S01E02.Another.Episode.1080p.WEB-DL.mkv (original untouched)
-├── processed/
-│   ├── Movie - S01E01 - Messy Filename.mkv (cleaned and filtered)
-│   └── Movie - S01E02 - Another Episode.mkv (cleaned and filtered)
-└── Other files...
-```
-
-**Benefits:**
-
-- ✅ Original files are never modified or moved
-- ✅ Processed files are clearly organized in dedicated folders
-- ✅ Easy to compare before/after results
-- ✅ Safe processing with automatic backup preservation
-
-## Privacy & Security
-
-This project is designed with privacy in mind:
-
-- **Personal configuration files** (`config.py`) are automatically ignored by Git
-- **No personal information** is hardcoded in the source files
-- **Clean separation** between your personal settings and the public codebase
-- **Example configuration** (`config_example.py`) shows the format without exposing real paths
-- **Web-based configuration** allows setup without editing code files
-- **Local processing only** - no data is sent to external servers
-
-Your personal paths, usernames, and system-specific settings remain private and are never committed to the repository.
-
-## Filename Parsing Examples
-
-The tool intelligently parses various filename formats:
+### Filename Examples
 
 - `Show.Name.S01E01.Episode.Title.1080p.WEB-DL.mkv` → `Show Name - S01E01 - Episode Title.mkv`
 - `Series.S02E05.(WEB-DL.1080p).mkv` → `Series - S02E05 - Episode #2.5.mkv`
-- `Another.Show.S01E01.Pilot.BluRay.x264.mkv` → `Another Show - S01E01 - Pilot.mkv`
 
-## Output Format
+## Configuration
 
-Processed files are saved with cleaned, standardized names in "processed" folders:
+### Web Configuration (Recommended)
 
-- **With episode title**: `Series Name - S01E01 - Episode Title.mkv`
-- **Without episode title**: `Series Name - S01E01 - Episode #1.1.mkv`
-- **Movie files**: `Movie Title (Year).mkv`
+1. Start the web interface: `cd web/ && python app.py`
+2. Click "⚙️ Edit Paths" to configure mkvmerge path and default folder
+3. Use the main page to set language preferences
 
-**Track Organization:**
+### Manual Configuration
 
-- ✅ Only specified audio languages are kept
-- ✅ Only specified subtitle languages are kept
-- ✅ Default tracks are properly set
-- ✅ Track titles are cleaned and standardized
-- ✅ Original video quality is preserved
+Copy `core/config_example.py` to `core/config.py` and edit the key settings:
 
-## Development
+- `MKVMERGE_PATH` - Path to mkvmerge executable
+- `MKV_FOLDER` - Default folder for browsing
+- `ALLOWED_SUB_LANGS` / `ALLOWED_AUDIO_LANGS` - Language preferences
 
-### Project Structure
+## Testing
+
+```bash
+# Run individual tests (from project root)
+python -m tests.test_simplified_titles
+python -m tests.test_subtitle_deduplication
+python -m tests.test_quality_detection
+```
+
+## Project Structure
 
 ```
 mkv-manager/
-├── web_interface.py          # Flask web application
-├── mkv_cleaner.py           # Core MKV processing logic
-├── config_example.py        # Configuration template
-├── requirements.txt         # Python dependencies
-├── static/
-│   ├── app.js              # Main JavaScript with drag & drop
-│   ├── file_browser_modal.js # File browser functionality
-│   └── styles.css          # Modern responsive styling
-├── templates/
-│   ├── index.html          # Main interface
-│   ├── config.html         # Configuration page
-│   └── file_browser_modal.html # Reusable file browser
-└── README.md               # This documentation
+├── core/                    # Core processing logic (standalone)
+├── web/                     # Flask web interface
+├── tests/                   # Test suite
+├── scripts/                 # Utility scripts
+└── requirements.txt
 ```
-
-### Key Technologies
-
-- **Backend**: Python 3.7+, Flask, MKVToolNix
-- **Frontend**: Modern JavaScript ES6+, HTML5 File System Access API, CSS3 Grid/Flexbox
-- **Features**: Real-time WebSocket-like updates, responsive design, drag & drop with full folder support
-
-### Running Tests
-
-```bash
-python test_quality_detection.py
-```
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Create your own `config.py` file for testing (copy from `config_example.py`)
-5. Test your changes thoroughly (both web interface and command line)
-6. Test drag & drop functionality with various file types and folder structures
-7. Submit a pull request
-
-**Note**: Never commit your personal `config.py` file - it's automatically ignored by Git.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License - Local processing only, no data sent to external servers.
 
-## Support
+## Requirements
 
-For issues or questions, please open an issue on GitHub.
+- Python 3.7+
+- [MKVToolNix](https://mkvtoolnix.download/) (mkvmerge)
+- Flask (for web interface)

@@ -4,6 +4,7 @@ config.py
 processed/
 mkv_process_log.txt
 # Test files
+tests
 test_*.py
 # IDE files
 .vscode/
