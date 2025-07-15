@@ -166,21 +166,24 @@
       </div>
 
       <div class="section">
-        <h2>📁 Add Files to Process</h2>
-        <p style="color: #666; margin-bottom: 15px;">
-          <em>Add individual MKV files or entire folders to process. Processed files will be saved in a "processed" folder next to the original files.</em>
-        </p>
+        <div class="process-files-header">
+          <h2>📁 Process Files</h2>
+        </div>
+        
+        <div class="process-files-description">
+          <strong>💡 How it works:</strong> Add <em>individual MKV files</em> or <em>entire folders</em> to process. Processed files will be saved in a "processed" folder next to the original files.
+          <br>
+          <strong> 📂 Supported:</strong> Individual .mkv files, folders containing .mkv files, or nested folder structures
+        </div>
         
         <!-- Drag & Drop Zone -->
         <div id="dropZone" class="drop-zone">
           <div class="drop-zone-content">
             <div class="drop-zone-icon">📁</div>
             <div class="drop-zone-text">
-              <strong>Drag & Drop Files or Folders, or Click to Browse</strong>
-              <p>Drop individual .mkv files or entire folders here, or click to browse</p>
-              <p style="font-size: 0.8rem; margin-top: 0.5rem; color: #888;">
-                💡 <em>Folders are fully supported - just drag them directly from your file manager!</em>
-              </p>
+              <strong>Drag & Drop Files or Folders Here</strong>
+              <p>Drop individual .mkv files or entire folders containing videos</p>
+              <p>💡 <em>You can also click here to browse and select files manually</em></p>
             </div>
           </div>
           <div id="dropZoneOverlay" class="drop-zone-overlay">
@@ -193,40 +196,67 @@
 
         <!-- Dropped Files Display -->
         <div id="droppedFilesSection" class="dropped-files-section" style="display: none;">
-          <h3>📋 Dropped Files</h3>
+          <h3>📋 Ready to Process</h3>
           <div id="droppedFilesList" class="dropped-files-list"></div>
           <div class="dropped-files-actions">
             <button type="button" class="btn btn-primary" onclick="processDroppedFiles()">
-              ▶️ Process Dropped Files
+              ▶️ Start Processing
             </button>
             <button type="button" class="btn btn-secondary" onclick="clearDroppedFiles()">
               🗑️ Clear All
             </button>
           </div>
         </div>
-      </div>
 
-      <div class="section">
-        <h2>Processing</h2>
-        <button
-          id="stop-btn"
-          class="btn btn-danger"
-          onclick="stopProcessing()"
-          style="display: none"
-        >
-          ⏹️ Stop Processing
-        </button>
-
-        <div id="progress-container" class="progress-container">
-          <div class="progress-bar">
-            <div id="progress-fill" class="progress-fill"></div>
+        <!-- Processing Status -->
+        <div id="processing-status-container" style="margin-top: 2rem;">
+          <!-- Idle State -->
+          <div id="processing-idle" class="processing-idle">
+            <div class="processing-idle-content">
+              <div class="processing-idle-text">
+                <h3>Ready to Process MKV Files</h3>
+                <p>Add files above and click "Start Processing" to begin optimizing your videos!</p>
+              </div>
+            </div>
+            <div class="processing-idle-features">
+              <div class="processing-idle-feature">
+                <span class="feature-icon">🎯</span>
+                <span class="feature-text">Smart language detection</span>
+              </div>
+              <div class="processing-idle-feature">
+                <span class="feature-icon">🔧</span>
+                <span class="feature-text">Automatic subtitle handling</span>
+              </div>
+              <div class="processing-idle-feature">
+                <span class="feature-icon">📁</span>
+                <span class="feature-text">Batch folder processing</span>
+              </div>
+            </div>
           </div>
-          <div id="progress-text" class="progress-text">Ready to start...</div>
-        </div>
 
-        <div id="log-container" class="log-container">
-          <h3>Processing Log</h3>
-          <div id="log" class="log"></div>
+          <!-- Active Processing State -->
+          <div id="processing-active" class="processing-active" style="display: none;">
+            <button
+              id="stop-btn"
+              class="btn btn-danger"
+              onclick="stopProcessing()"
+              style="display: none"
+            >
+              ⏹️ Stop Processing
+            </button>
+
+            <div id="progress-container" class="progress-container">
+              <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+              </div>
+              <div id="progress-text" class="progress-text">Ready to start...</div>
+            </div>
+
+            <div id="log-container" class="log-container">
+              <h3>Processing Log</h3>
+              <div id="log" class="log"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

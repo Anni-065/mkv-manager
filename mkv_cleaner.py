@@ -44,7 +44,9 @@ def get_track_info(file_path):
             tracks.append({
                 "id": track["id"],
                 "type": track["type"],
-                "lang": track["properties"].get("language", "und")
+                "lang": track["properties"].get("language", "und"),
+                "forced": track["properties"].get("forced_track", False),
+                "hearing_impaired": track["properties"].get("hearing_impaired_flag", False)
             })
         return tracks
     except json.JSONDecodeError:
@@ -237,6 +239,8 @@ def filter_and_remux(file_path):
         tid = t["id"]
         ttype = t["type"]
         lang = t["lang"]
+        forced = t.get("forced", False)
+        hearing_impaired = t.get("hearing_impaired", False)
         title = LANG_TITLES.get(lang, lang)
 
         if ttype == "video":
@@ -266,23 +270,55 @@ def filter_and_remux(file_path):
                 change_log.append(f"Removed audio track {tid} [{title}]")
 
         elif ttype == "subtitles":
-            if lang in ALLOWED_SUB_LANGS:
+            is_forced_original = forced and lang == ORIGINAL_SUBTITLE_LANG
+            is_allowed_lang = lang in ALLOWED_SUB_LANGS
+
+            if is_allowed_lang or is_forced_original:
                 subtitle_tracks.append(str(tid))
                 is_default_sub = (lang == DEFAULT_SUBTITLE_LANG)
                 is_original_sub = (lang == ORIGINAL_SUBTITLE_LANG)
+
+                if forced and hearing_impaired and title:
+                    track_title = f"{title} (Forced SDH)"
+                elif forced and hearing_impaired and not title:
+                    track_title = f"{lang} (Forced SDH)"
+                elif forced and title:
+                    track_title = f"{title} (Forced)"
+                elif forced and not title:
+                    track_title = f"{lang} (Forced)"
+                elif hearing_impaired and title:
+                    track_title = f"{title} (SDH)"
+                elif hearing_impaired and not title:
+                    track_title = f"{lang} (SDH)"
+                else:
+                    track_title = title
+
                 cmd += ["--default-track",
                         f"{tid}:{'yes' if is_default_sub else 'no'}"]
                 cmd += ["--original-flag",
                         f"{tid}:{'yes' if is_original_sub else 'no'}"]
-                cmd += ["--track-name", f"{tid}:{title}"]
+                cmd += ["--track-name", f"{tid}:{track_title}"]
+
+                if forced:
+                    cmd += ["--forced-track", f"{tid}:yes"]
+                if hearing_impaired:
+                    cmd += ["--hearing-impaired-flag", f"{tid}:yes"]
+
                 if is_default_sub:
                     change_log.append(
-                        f"Set subtitle {tid} [{title}] as default")
+                        f"Set subtitle {tid} [{track_title}] as default")
                 else:
-                    change_log.append(f"Keep subtitle track {tid} [{title}]")
+                    change_log.append(
+                        f"Keep subtitle track {tid} [{track_title}]")
                 if is_original_sub:
                     change_log.append(
-                        f"Set subtitle {tid} [{title}] as original")
+                        f"Set subtitle {tid} [{track_title}] as original")
+                if forced:
+                    change_log.append(
+                        f"Preserved forced subtitle {tid} [{track_title}]")
+                if hearing_impaired:
+                    change_log.append(
+                        f"Preserved SDH subtitle {tid} [{track_title}]")
             else:
                 change_log.append(f"Removed subtitle track {tid} [{title}]")
 

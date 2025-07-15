@@ -1,5 +1,6 @@
 let statusInterval;
 let droppedFiles = [];
+let isProcessingDrop = false;
 
 function initializeDragAndDrop() {
   const dropZone = document.getElementById("dropZone");
@@ -7,6 +8,8 @@ function initializeDragAndDrop() {
   if (!dropZone) return;
 
   setupDropZoneClick();
+
+  isProcessingDrop = false;
 
   ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
     document.addEventListener(eventName, preventDefaults, false);
@@ -39,13 +42,29 @@ function initializeDragAndDrop() {
   function handleDrop(e) {
     const dt = e.dataTransfer;
 
-    if (dt.items) {
+    if (isProcessingDrop) {
+      return;
+    }
+
+    isProcessingDrop = true;
+
+    setTimeout(() => {
+      if (isProcessingDrop) {
+        isProcessingDrop = false;
+      }
+    }, 10000);
+
+    droppedFiles = [];
+    document.getElementById("droppedFilesList").innerHTML = "";
+
+    if (dt.items && dt.items.length > 0) {
       const items = [...dt.items];
       let hasDirectories = false;
 
       for (let item of items) {
         if (item.webkitGetAsEntry) {
           const entry = item.webkitGetAsEntry();
+
           if (entry && entry.isDirectory) {
             hasDirectories = true;
             break;
@@ -54,13 +73,21 @@ function initializeDragAndDrop() {
       }
 
       if (hasDirectories) {
-        handleDirectoryDrop(items);
-        return;
+        handleDirectoryDrop(items).finally(() => {
+          isProcessingDrop = false;
+        });
+      } else {
+        const files = dt.files;
+        handleFiles(files);
+        isProcessingDrop = false;
       }
+    } else if (dt.files && dt.files.length > 0) {
+      const files = dt.files;
+      handleFiles(files);
+      isProcessingDrop = false;
+    } else {
+      isProcessingDrop = false;
     }
-
-    const files = dt.files;
-    handleFiles(files);
   }
 }
 
@@ -101,11 +128,26 @@ function openFolderBrowserForDropZone() {
 }
 
 function handleFiles(files) {
+  const processingId = Math.random().toString(36).substr(2, 9);
+  console.log("=== HANDLE FILES START ===", processingId);
+  console.log("Files count:", files.length);
+
+  resetProcessingToIdle();
+
+  document.getElementById("droppedFilesList").innerHTML = "";
+  droppedFiles = [];
+
   const filesArray = [...files];
   let hasValidMkvFiles = false;
   let folderStructure = new Map();
 
-  filesArray.forEach((file) => {
+  filesArray.forEach((file, index) => {
+    console.log(
+      `Processing file ${index + 1} in session ${processingId}:`,
+      file.name,
+      file.type,
+      file.size
+    );
     const isFolder = file.type === "" && file.size % 4096 === 0;
     const isMkvFile =
       file.name.toLowerCase().endsWith(".mkv") ||
@@ -120,7 +162,13 @@ function handleFiles(files) {
 
       folderStructure.get(folderPath).push(file);
     } else if (isMkvFile && !isFolder) {
-      addDroppedItem(file.name, "mkv", formatFileSize(file.size), file.name);
+      console.log("Adding MKV file in session", processingId, ":", file.name);
+      addDroppedItem(
+        file.name,
+        "mkv",
+        formatFileSize(file.size),
+        "📁 Dropped file"
+      );
       droppedFiles.push(file);
       hasValidMkvFiles = true;
     } else if (isFolder) {
@@ -206,7 +254,7 @@ function addDroppedItem(name, type, size, path) {
   const iconMap = {
     folder: "📁",
     mkv: "🎬",
-    unknown: "❓",
+    unknown: "❌",
   };
 
   const typeClassMap = {
@@ -297,9 +345,29 @@ async function processDroppedFiles() {
     document.getElementById("process-btn");
   if (processBtn) {
     processBtn.disabled = true;
-    processBtn.textContent = "Processing...";
-    processBtn.style.opacity = "0.6";
+    processBtn.textContent = "🚀 Starting...";
+    processBtn.style.opacity = "0.7";
   }
+
+  const processingIdle = document.getElementById("processing-idle");
+  const processingActive = document.getElementById("processing-active");
+  const progressContainer = document.getElementById("progress-container");
+  const logContainer = document.getElementById("log-container");
+  const stopBtn = document.getElementById("stop-btn");
+
+  processingIdle.style.display = "none";
+  processingActive.style.display = "block";
+  progressContainer.style.display = "block";
+  logContainer.style.display = "block";
+  stopBtn.style.display = "inline-block";
+
+  const progressFill = document.getElementById("progress-fill");
+  const progressText = document.getElementById("progress-text");
+  const log = document.getElementById("log");
+
+  progressFill.style.width = "0%";
+  progressText.textContent = "Initializing processing...";
+  log.innerHTML = "<div>🚀 Starting processing...</div>";
 
   try {
     let response;
@@ -311,6 +379,7 @@ async function processDroppedFiles() {
         formData.append(`file_${index}`, file);
       });
 
+      log.innerHTML += "<div>📤 Uploading files...</div>";
       response = await fetch("/process_dropped_files", {
         method: "POST",
         body: formData,
@@ -326,12 +395,7 @@ async function processDroppedFiles() {
           "Error loading files from folder: " + folderData.error,
           "error"
         );
-
-        if (processBtn) {
-          processBtn.disabled = false;
-          processBtn.textContent = "🎬 Process Files";
-          processBtn.style.opacity = "1";
-        }
+        resetProcessingToIdle();
         return;
       }
 
@@ -340,12 +404,7 @@ async function processDroppedFiles() {
           "No MKV files found in the selected folder.",
           "warning"
         );
-
-        if (processBtn) {
-          processBtn.disabled = false;
-          processBtn.textContent = "🎬 Process Files";
-          processBtn.style.opacity = "1";
-        }
+        resetProcessingToIdle();
         return;
       }
 
@@ -353,6 +412,7 @@ async function processDroppedFiles() {
         (file) => `${window.selectedFolderPath}\\${file.name}`
       );
 
+      log.innerHTML += "<div>📁 Processing folder contents...</div>";
       response = await fetch("/process_dropped_files", {
         method: "POST",
         headers: {
@@ -366,58 +426,88 @@ async function processDroppedFiles() {
 
     if (result.error) {
       showNotification("Error: " + result.error, "error");
-
-      if (processBtn) {
-        processBtn.disabled = false;
-        processBtn.textContent = "🎬 Process Files";
-        processBtn.style.opacity = "1";
-      }
+      resetProcessingToIdle();
       return;
     }
 
     clearDroppedFiles();
     window.selectedFolderPath = null;
 
-    document.getElementById("stop-btn").style.display = "inline-block";
-    document.getElementById("progress-container").style.display = "block";
-    document.getElementById("log-container").style.display = "block";
+    log.innerHTML += "<div>✅ Processing started successfully!</div>";
+    log.scrollTop = log.scrollHeight;
 
     if (statusInterval) {
       clearInterval(statusInterval);
     }
-    statusInterval = setInterval(updateStatus, 1000);
+    statusInterval = setInterval(updateStatus, 500);
 
     showNotification("Processing started!", "success");
   } catch (error) {
     showNotification("Error processing files: " + error.message, "error");
-
-    const processBtn =
-      document.querySelector('button[onclick="processDroppedFiles()"]') ||
-      document.getElementById("process-btn");
-
-    if (processBtn) {
-      processBtn.disabled = false;
-      processBtn.textContent = "🎬 Process Files";
-      processBtn.style.opacity = "1";
-    }
+    resetProcessingToIdle();
   }
+}
+
+function resetToIdleState() {
+  const processingIdle = document.getElementById("processing-idle");
+  const processingActive = document.getElementById("processing-active");
+
+  if (processingIdle && processingActive) {
+    processingIdle.style.display = "block";
+    processingActive.style.display = "none";
+  }
+
+  if (statusInterval) {
+    clearInterval(statusInterval);
+    statusInterval = null;
+  }
+
+  resetProcessButton();
+}
+
+function resetProcessButton() {
+  const processBtn =
+    document.querySelector('button[onclick="processDroppedFiles()"]') ||
+    document.getElementById("process-btn");
+
+  if (processBtn) {
+    processBtn.disabled = false;
+    processBtn.textContent = "🚀 Process Files";
+    processBtn.style.opacity = "1";
+  }
+}
+
+function resetProcessingToIdle() {
+  const processingIdle = document.getElementById("processing-idle");
+  const processingActive = document.getElementById("processing-active");
+
+  processingIdle.style.display = "block";
+  processingActive.style.display = "none";
+
+  resetProcessButton();
 }
 
 function stopProcessing() {
   fetch("/stop", { method: "POST" })
     .then((response) => response.json())
     .then((data) => {
-      clearInterval(statusInterval);
-      document.getElementById("stop-btn").style.display = "none";
-
-      const processBtn =
-        document.querySelector('button[onclick="processDroppedFiles()"]') ||
-        document.getElementById("process-btn");
-      if (processBtn) {
-        processBtn.disabled = false;
-        processBtn.textContent = "🎬 Process Files";
-        processBtn.style.opacity = "1";
+      if (statusInterval) {
+        clearInterval(statusInterval);
+        statusInterval = null;
       }
+
+      const processingIdle = document.getElementById("processing-idle");
+      const processingActive = document.getElementById("processing-active");
+
+      processingIdle.style.display = "block";
+      processingActive.style.display = "none";
+
+      resetProcessButton();
+      showNotification("Processing stopped by user", "info");
+    })
+    .catch((error) => {
+      console.error("Error stopping processing:", error);
+      showNotification("Error stopping processing", "error");
     });
 }
 
@@ -428,38 +518,82 @@ function updateStatus() {
       const progressFill = document.getElementById("progress-fill");
       const progressText = document.getElementById("progress-text");
       const log = document.getElementById("log");
+      const processingIdle = document.getElementById("processing-idle");
+      const processingActive = document.getElementById("processing-active");
+      const progressContainer = document.getElementById("progress-container");
+      const logContainer = document.getElementById("log-container");
+      const stopBtn = document.getElementById("stop-btn");
 
-      if (status.total_files > 0) {
-        const percentage = (status.progress / status.total_files) * 100;
-        progressFill.style.width = percentage + "%";
-        progressText.textContent = `Processing ${status.progress}/${status.total_files} files`;
+      if (status.is_running) {
+        processingIdle.style.display = "none";
+        processingActive.style.display = "block";
+        progressContainer.style.display = "block";
+        logContainer.style.display = "block";
+        stopBtn.style.display = "inline-block";
 
-        if (status.current_file) {
-          progressText.textContent += ` - Current: ${status.current_file}`;
+        if (status.total_files > 0) {
+          const percentage = (status.progress / status.total_files) * 100;
+          progressFill.style.width = percentage + "%";
+          progressText.textContent = `Processing ${status.progress}/${status.total_files} files`;
+
+          if (status.current_file) {
+            progressText.textContent += ` - Current: ${status.current_file}`;
+          }
+        } else {
+          progressFill.style.width = "0%";
+          progressText.textContent = "Preparing to process files...";
         }
-      }
 
-      log.innerHTML = status.log.map((entry) => `<div>${entry}</div>`).join("");
-      log.scrollTop = log.scrollHeight;
+        log.innerHTML = status.log
+          .map((entry) => `<div>${entry}</div>`)
+          .join("");
+        log.scrollTop = log.scrollHeight;
+      } else {
+        processingIdle.style.display = "none";
+        processingActive.style.display = "block";
+        progressContainer.style.display = "block";
+        logContainer.style.display = "block";
+        stopBtn.style.display = "none";
 
-      if (!status.is_running) {
-        clearInterval(statusInterval);
-        document.getElementById("stop-btn").style.display = "none";
+        if (status.total_files > 0) {
+          const percentage = (status.progress / status.total_files) * 100;
+          progressFill.style.width = percentage + "%";
 
-        const processBtn =
-          document.querySelector('button[onclick="processDroppedFiles()"]') ||
-          document.getElementById("process-btn");
-        if (processBtn) {
-          processBtn.disabled = false;
-          processBtn.textContent = "🎬 Process Files";
-          processBtn.style.opacity = "1";
+          if (status.progress === status.total_files) {
+            progressText.textContent = `✅ Processing completed! ${status.progress}/${status.total_files} files processed`;
+          } else {
+            progressText.textContent = `⏸️ Processing stopped at ${status.progress}/${status.total_files} files`;
+          }
+        } else {
+          progressFill.style.width = "0%";
+          progressText.textContent = "Processing finished";
         }
+
+        if (status.log && status.log.length > 0) {
+          log.innerHTML = status.log
+            .map((entry) => `<div>${entry}</div>`)
+            .join("");
+          log.scrollTop = log.scrollHeight;
+        }
+
+        if (statusInterval) {
+          clearInterval(statusInterval);
+          statusInterval = null;
+        }
+
+        resetProcessButton();
 
         if (status.progress > 0) {
-          progressText.textContent = "Processing completed!";
-        } else {
-          progressText.textContent = "Processing stopped.";
+          showNotification("Processing completed successfully!", "success");
         }
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching status:", error);
+
+      if (statusInterval) {
+        clearInterval(statusInterval);
+        statusInterval = null;
       }
     });
 }
@@ -474,6 +608,8 @@ function selectCurrentFolder() {
 }
 
 function loadFilesFromFolderForDropZone(folderPath) {
+  resetProcessingToIdle();
+
   fetch(`/files?path=${encodeURIComponent(folderPath)}`)
     .then((response) => response.json())
     .then((data) => {
@@ -493,27 +629,37 @@ function loadFilesFromFolderForDropZone(folderPath) {
         return;
       }
 
-      clearDroppedFiles();
+      window.selectedFolderPath = folderPath;
+      droppedFiles = [];
+      document.getElementById("droppedFilesList").innerHTML = "";
+
+      addDroppedItem(
+        `📁 ${folderPath}`,
+        "folder",
+        `Contains ${data.files.length} MKV file(s)`,
+        folderPath
+      );
 
       data.files.forEach((file) => {
         addDroppedItem(
-          file.name,
+          `  └─ ${file.name}`,
           "mkv",
-          `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+          formatFileSize(file.size),
           `${folderPath}\\${file.name}`
         );
       });
 
       document.getElementById("droppedFilesSection").style.display = "block";
-      window.selectedFolderPath = folderPath;
+      updateDroppedFilesDisplay();
 
       showNotification(
-        `Added ${data.files.length} MKV files from the selected folder!`,
+        `Loaded ${data.files.length} MKV files from folder`,
         "success"
       );
     })
     .catch((error) => {
-      showNotification("Error loading files: " + error.message, "error");
+      console.error("Error loading files from folder:", error);
+      showNotification("Error loading files from folder", "error");
     });
 }
 
@@ -570,8 +716,24 @@ function showNotification(message, type = "info") {
 
 document.addEventListener("DOMContentLoaded", function () {
   initializeDragAndDrop();
-  setupDropZoneClick();
+  initializeProcessingState();
 });
+
+function initializeProcessingState() {
+  fetch("/status")
+    .then((response) => response.json())
+    .then((status) => {
+      if (status.is_running) {
+        updateStatus();
+      } else {
+        resetProcessingToIdle();
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching initial status:", error);
+      resetProcessingToIdle();
+    });
+}
 
 window.addEventListener("beforeunload", function () {
   if (statusInterval) {

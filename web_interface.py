@@ -1,4 +1,5 @@
 from mkv_cleaner import extract_series_info, get_track_info, filter_and_remux
+import mkv_cleaner
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 import os
 import subprocess
@@ -43,7 +44,7 @@ processing_status = {
 
 def update_mkv_cleaner_config():
     """Update the mkv_cleaner module with current config"""
-    import mkv_cleaner
+
     mkv_cleaner.MKVMERGE_PATH = config['MKVMERGE_PATH']
     mkv_cleaner.MKV_FOLDER = config['MKV_FOLDER']
     mkv_cleaner.OUTPUT_FOLDER = os.path.join(config['MKV_FOLDER'], "processed")
@@ -125,26 +126,27 @@ def process_files():
     if not os.path.exists(source_folder):
         return jsonify({'error': f'Source folder does not exist: {source_folder}'})
 
+    processing_status['is_running'] = True
+    processing_status['log'] = []
+    processing_status['progress'] = 0
+    processing_status['current_file'] = ''
+    
+    processing_status['log'].append("🚀 Starting processing...")
+    if custom_path:
+        processing_status['log'].append(f"📁 Scanning custom path: {custom_path}")
+    else:
+        processing_status['log'].append(f"📁 Scanning default path: {config['MKV_FOLDER']}")
+
     update_mkv_cleaner_config()
 
     def process_thread():
         try:
-            processing_status['is_running'] = True
-            processing_status['log'] = []
-            processing_status['progress'] = 0
-
             import mkv_cleaner
             os.makedirs(mkv_cleaner.OUTPUT_FOLDER, exist_ok=True)
             processing_status['log'].append(
                 f"📁 Created output folder: {mkv_cleaner.OUTPUT_FOLDER}")
 
-            if custom_path:
-                processing_status['log'].append(
-                    f"📁 Using custom path: {custom_path}")
-            else:
-                processing_status['log'].append(
-                    f"📁 Using default path: {config['MKV_FOLDER']}")
-
+            processing_status['log'].append("� Searching for MKV files...")
             mkv_files = [f for f in os.listdir(
                 source_folder) if f.lower().endswith('.mkv')]
             processing_status['total_files'] = len(mkv_files)
@@ -153,6 +155,8 @@ def process_files():
                 processing_status['log'].append(
                     "⚠️ No MKV files found in the specified folder")
                 return
+            
+            processing_status['log'].append(f"✅ Found {len(mkv_files)} MKV files to process")
 
             for i, file in enumerate(mkv_files):
                 processing_status['current_file'] = file
@@ -448,6 +452,14 @@ def process_files_from_paths(file_paths):
 
 def process_uploaded_files():
     """Process files that were actually uploaded (drag & drop)"""
+    processing_status['is_running'] = True
+    processing_status['log'] = []
+    processing_status['progress'] = 0
+    processing_status['current_file'] = ''
+    
+    processing_status['log'].append("🚀 Starting file upload processing...")
+    processing_status['log'].append("📁 Saving uploaded files...")
+    
     uploaded_files = []
 
     temp_dir = os.path.join(config['MKV_FOLDER'], 'temp_uploads')
@@ -460,20 +472,21 @@ def process_uploaded_files():
             filename = file.filename
             filename = os.path.basename(filename)
             file_path = os.path.join(temp_dir, filename)
-
+            
+            processing_status['log'].append(f"💾 Saving: {filename}")
             file.save(file_path)
             uploaded_files.append(file_path)
 
     if not uploaded_files:
+        processing_status['is_running'] = False
         return jsonify({'error': 'No valid MKV files were uploaded'})
 
+    processing_status['log'].append(f"✅ Saved {len(uploaded_files)} files successfully")
+    
     update_mkv_cleaner_config()
 
     def process_thread():
         try:
-            processing_status['is_running'] = True
-            processing_status['log'] = []
-            processing_status['progress'] = 0
             processing_status['total_files'] = len(uploaded_files)
 
             output_folder = os.path.join(config['MKV_FOLDER'], "processed")
@@ -482,7 +495,7 @@ def process_uploaded_files():
                 f"📁 Created output folder: {output_folder}")
 
             processing_status['log'].append(
-                f"📁 Processing {len(uploaded_files)} uploaded files")
+                f"🔄️ Processing {len(uploaded_files)} uploaded files")
 
             import mkv_cleaner
             mkv_cleaner.OUTPUT_FOLDER = output_folder
