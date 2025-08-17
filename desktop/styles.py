@@ -363,12 +363,11 @@ class ModernStyleManager:
             'TLabel', background=self.colors['bg'], foreground='#1f2328')
 
     @staticmethod
-    def create_rounded_frame(parent, bg_color, border_color=None, padding=10, corner_radius=8):
-        """Create a frame with rounded corner effect using nested frames"""
-        # Main container with rounded appearance
+    def create_simple_frame(parent, bg_color, border_color=None, padding=10):
+        """Create a simple frame with optional border"""
+
         container = tk.Frame(parent, bg=bg_color, relief='flat', bd=0)
 
-        # Inner frame with subtle border effect and rounded corners
         if border_color:
             inner_frame = tk.Frame(container, bg=bg_color, relief='solid', bd=1,
                                    highlightbackground=border_color, highlightthickness=1,
@@ -376,40 +375,27 @@ class ModernStyleManager:
         else:
             inner_frame = tk.Frame(container, bg=bg_color, relief='flat', bd=0)
 
-        # Add padding and simulate rounded corners with additional styling
         inner_frame.pack(fill=tk.BOTH, expand=True, padx=padding, pady=padding)
-
-        # Create corner frames for rounded effect (visual simulation)
-        corner_frames = []
-        for i in range(4):
-            corner_frame = tk.Frame(
-                container, bg=bg_color, width=corner_radius, height=corner_radius)
-            corner_frames.append(corner_frame)
 
         return container, inner_frame
 
     @staticmethod
     def create_card(parent, title, colors, padding=20):
-        """Create card-style frame"""
+        """Create card-style frame with clean modern styling"""
 
         container = tk.Frame(parent, bg=colors['bg'], relief='flat', bd=0)
 
-        card_frame = tk.Frame(container, bg=colors['card_bg'], relief='solid', bd=1,
-                              highlightbackground=colors['border'], highlightthickness=1,
-                              highlightcolor=colors['border'])
+        # Main card frame with border
+        card_frame = tk.Frame(container, bg=colors['card_bg'], relief='solid',
+                              bd=1, highlightbackground=colors['border'],
+                              highlightcolor=colors['border'], highlightthickness=0)
         card_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
 
-        if title:
-            title_frame = tk.Frame(card_frame, bg=colors['surface'], height=40)
-            title_frame.pack(fill=tk.X, padx=1, pady=(1, 0))
-            title_frame.pack_propagate(False)
-
-            title_label = tk.Label(title_frame, text=title, bg=colors['surface'],
-                                   fg=colors['text'], font=('Segoe UI', 12, 'bold'))
-            title_label.pack(side=tk.LEFT, padx=padding, pady=8)
-
-        content_frame = tk.Frame(card_frame, bg=colors['card_bg'])
-        content_frame.pack(fill=tk.BOTH, expand=True, padx=1, pady=(0, 1))
+        # Content frame inside card
+        content_frame = tk.Frame(
+            card_frame, bg=colors['card_bg'], relief='flat', bd=0)
+        content_frame.pack(fill=tk.BOTH, expand=True,
+                           padx=padding, pady=padding)
 
         return container, content_frame
 
@@ -460,7 +446,7 @@ class UIHelpers:
         style = button_styles.get(button_type, button_styles["primary"])
 
         padx = kwargs.get('padx', 20)
-        pady = kwargs.get('pady', 12)
+        pady = kwargs.get('pady', 8)
 
         try:
             parent_bg = parent.cget('bg')
@@ -676,13 +662,12 @@ class UIHelpers:
         return container
 
     @staticmethod
-    def create_card_frame(parent, title, colors, padding="25"):
-        card_frame = ttk.LabelFrame(parent, text=title,
-                                    padding=padding, style='Card.TLabelframe')
+    def create_labelframe(parent, text, colors, padding=15):
+        """Create a simple label frame to replace ttk.LabelFrame"""
 
-        card_frame.configure(relief='solid', borderwidth=1)
-
-        return card_frame
+        frame = ttk.LabelFrame(
+            parent, text=text, style='Modern.TLabelframe', padding=padding)
+        return frame
 
     @staticmethod
     def create_hover_effect(widget, colors, enter_color, leave_color):
