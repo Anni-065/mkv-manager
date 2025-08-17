@@ -1,7 +1,9 @@
+from core.constants import LANG_TITLES
 import shutil
 from datetime import datetime
 import threading
 import subprocess
+import re
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 import sys
 import os
@@ -13,6 +15,8 @@ mkv_cleaner = importlib.import_module('core.mkv_cleaner')
 extract_series_info = mkv_cleaner.extract_series_info
 get_track_info = mkv_cleaner.get_track_info
 filter_and_remux = mkv_cleaner.filter_and_remux
+
+# Import language titles from constants
 
 try:
     from core.config import *
@@ -37,7 +41,13 @@ config = {
     'DEFAULT_AUDIO_LANG': DEFAULT_AUDIO_LANG,
     'DEFAULT_SUBTITLE_LANG': DEFAULT_SUBTITLE_LANG,
     'ORIGINAL_AUDIO_LANG': ORIGINAL_AUDIO_LANG,
-    'ORIGINAL_SUBTITLE_LANG': ORIGINAL_SUBTITLE_LANG
+    'ORIGINAL_SUBTITLE_LANG': ORIGINAL_SUBTITLE_LANG,
+    'EXTRACT_SUBTITLES': globals().get('EXTRACT_SUBTITLES', False),
+    'SAVE_EXTRACTED_SUBTITLES': globals().get('SAVE_EXTRACTED_SUBTITLES', False),
+    'LANG_TITLES': LANG_TITLES,
+    'AVAILABLE_AUDIO_LANGS': {lang: LANG_TITLES.get(lang, lang) for lang in ALLOWED_AUDIO_LANGS},
+    'AVAILABLE_SUB_LANGS': {lang: LANG_TITLES.get(lang, lang) for lang in ALLOWED_SUB_LANGS},
+    'ALL_CONFIGURED_LANGS': {lang: LANG_TITLES.get(lang, lang) for lang in ALLOWED_AUDIO_LANGS.union(ALLOWED_SUB_LANGS)}
 }
 
 processing_status = {
@@ -171,7 +181,7 @@ def process_files():
                     full_path = os.path.normpath(
                         os.path.join(source_folder, file))
                     processing_status['log'].append(f"Processing: {file}")
-                    filter_and_remux(full_path)
+                    filter_and_remux(full_path, preferences=config)
                     processing_status['log'].append(f"✓ Completed: {file}")
                 except Exception as e:
                     processing_status['log'].append(
@@ -348,7 +358,19 @@ def update_settings():
         config['ORIGINAL_SUBTITLE_LANG'] = request.form.get(
             'original_subtitle_lang', config['ORIGINAL_SUBTITLE_LANG'])
 
-        flash('Language settings updated successfully!', 'success')
+        # Handle subtitle processing options
+        config['EXTRACT_SUBTITLES'] = 'extract_subtitles' in request.form
+        config['SAVE_EXTRACTED_SUBTITLES'] = 'save_extracted_subtitles' in request.form
+
+        # Update the language dictionaries based on new settings
+        config['AVAILABLE_AUDIO_LANGS'] = {lang: LANG_TITLES.get(
+            lang, lang) for lang in config['ALLOWED_AUDIO_LANGS']}
+        config['AVAILABLE_SUB_LANGS'] = {lang: LANG_TITLES.get(
+            lang, lang) for lang in config['ALLOWED_SUB_LANGS']}
+        config['ALL_CONFIGURED_LANGS'] = {lang: LANG_TITLES.get(lang, lang) for lang in set(
+            config['ALLOWED_AUDIO_LANGS'] + config['ALLOWED_SUB_LANGS'])}
+
+        flash('Settings updated successfully!', 'success')
         return redirect(url_for('index'))
 
 
@@ -415,7 +437,7 @@ def process_files_from_paths(file_paths):
                             f"Processing: {filename}")
 
                         # The filter_and_remux function now handles output folder automatically
-                        filter_and_remux(file_path)
+                        filter_and_remux(file_path, preferences=config)
                         processing_status['log'].append(
                             f"✓ Completed: {filename}")
                     except Exception as e:
@@ -448,65 +470,88 @@ def process_uploaded_files():
     processing_status['current_file'] = ''
 
     processing_status['log'].append("🚀 Starting file upload processing...")
-    processing_status['log'].append("📁 Saving uploaded files...")
+    processing_status['log'].append("📁 Analyzing uploaded files...")
 
-    uploaded_files = []
+    # Create temporary files for processing
+    temp_files = []
+    file_names = []
 
-    temp_dir = os.path.join(config['MKV_FOLDER'], 'temp_uploads')
+    # Create temp directory for processing
+    temp_dir = os.path.join(config['MKV_FOLDER'], 'temp_processing')
     os.makedirs(temp_dir, exist_ok=True)
 
+    # Save files temporarily for processing
     for key in request.files:
         file = request.files[key]
-
         if file and file.filename.lower().endswith('.mkv'):
-            filename = file.filename
-            filename = os.path.basename(filename)
-            file_path = os.path.join(temp_dir, filename)
+            filename = os.path.basename(file.filename)
+            temp_file_path = os.path.join(temp_dir, filename)
+            file.save(temp_file_path)
+            temp_files.append(temp_file_path)
+            file_names.append(filename)
 
-            processing_status['log'].append(f"💾 Saving: {filename}")
-            file.save(file_path)
-            uploaded_files.append(file_path)
-
-    if not uploaded_files:
+    if not temp_files:
         processing_status['is_running'] = False
         return jsonify({'error': 'No valid MKV files were uploaded'})
 
-    processing_status['log'].append(
-        f"✅ Saved {len(uploaded_files)} files successfully")
+    # Determine output folder structure
+    downloads_path = os.path.join(os.path.expanduser('~'), 'Downloads')
+    mkv_cleaner_path = os.path.join(downloads_path, 'MKV cleaner')
+
+    # Try to detect series name from first file
+    series_info = extract_series_info(file_names[0])
+    if series_info[0]:  # If we can extract series info
+        series_name = series_info[0]
+        safe_series_name = re.sub(r'[<>:"/\\|?*]', '', series_name)
+        output_folder = os.path.join(mkv_cleaner_path, safe_series_name)
+        processing_status['log'].append(f"📁 Detected series: {series_name}")
+    else:
+        # Use timestamp for mixed files
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        output_folder = os.path.join(
+            mkv_cleaner_path, f"processed_{timestamp}")
+        processing_status['log'].append(f"� Mixed files detected")
+
+    os.makedirs(output_folder, exist_ok=True)
+    processing_status['log'].append(f"📁 Output folder: {output_folder}")
 
     update_mkv_cleaner_config()
 
     def process_thread():
         try:
-            processing_status['total_files'] = len(uploaded_files)
-
+            processing_status['total_files'] = len(temp_files)
             processing_status['log'].append(
-                f"️ Processing {len(uploaded_files)} uploaded files")
+                f"🔄️ Processing {len(temp_files)} files")
 
-            for i, file_path in enumerate(uploaded_files):
-                filename = os.path.basename(file_path)
+            for i, temp_file_path in enumerate(temp_files):
+                filename = os.path.basename(temp_file_path)
                 processing_status['current_file'] = filename
                 processing_status['progress'] = i
 
                 try:
                     processing_status['log'].append(f"Processing: {filename}")
-                    # The filter_and_remux function will use the temp directory or fall back to default
-                    filter_and_remux(file_path)
+                    # Process directly to the Downloads/MKV cleaner/Series Name/ folder
+                    filter_and_remux(
+                        temp_file_path, output_folder, preferences=config)
                     processing_status['log'].append(f"✓ Completed: {filename}")
                 except Exception as e:
                     processing_status['log'].append(
                         f"✗ Error processing {filename}: {str(e)}")
 
-            processing_status['progress'] = len(uploaded_files)
+            processing_status['progress'] = len(temp_files)
             processing_status['current_file'] = ''
-            processing_status['log'].append("🎉 All uploaded files processed!")
+            processing_status['log'].append("🎉 All files processed!")
+            processing_status['log'].append(
+                f"📁 Results saved to: {output_folder}")
 
+            # Clean up temporary files
             try:
+                import shutil
                 shutil.rmtree(temp_dir)
                 processing_status['log'].append("🧹 Temporary files cleaned up")
             except Exception as e:
                 processing_status['log'].append(
-                    f"⚠️ Warning: Could not clean up temp files: {str(e)}")
+                    f"⚠️ Warning: Could not clean temp files: {str(e)}")
 
         except Exception as e:
             processing_status['log'].append(f"✗ Fatal error: {str(e)}")
@@ -517,7 +562,7 @@ def process_uploaded_files():
     thread.daemon = True
     thread.start()
 
-    return jsonify({'success': True, 'message': 'Uploaded files processing started'})
+    return jsonify({'success': True, 'message': 'File processing started'})
 
 
 if __name__ == '__main__':

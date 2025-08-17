@@ -15,3 +15,7 @@ DEFAULT_SUBTITLE_LANG = "eng"
 
 ORIGINAL_AUDIO_LANG = "kor"
 ORIGINAL_SUBTITLE_LANG = "kor"
+
+# Subtitle extraction settings
+EXTRACT_SUBTITLES = False  # Convert subtitles to SRT format during processing
+SAVE_EXTRACTED_SUBTITLES = False  # Save extracted SRT files next to processed MKV

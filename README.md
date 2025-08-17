@@ -40,6 +40,18 @@ cd web/
 python app.py
 ```
 
+**Desktop GUI (Better file path control):**
+
+```bash
+# From the desktop folder:
+cd desktop
+start_desktop_gui.bat
+
+# Or run directly:
+cd desktop
+python desktop_gui.py
+```
+
 **Standalone Script:**
 
 ```bash
@@ -76,6 +88,29 @@ filter_and_remux("path/to/video.mkv")
 - `Show.Name.S01E01.Episode.Title.1080p.WEB-DL.mkv` → `Show Name - S01E01 - Episode Title.mkv`
 - `Series.S02E05.(WEB-DL.1080p).mkv` → `Series - S02E05 - Episode #2.5.mkv`
 
+## Interface Comparison
+
+### Web Interface (web/app.py)
+
+- **Best for**: Quick batch processing, modern UI
+- **File location**: Downloads/MKV cleaner/Series Name/
+- **Pros**: Drag & drop, real-time progress, no installation
+- **Cons**: Limited file path control due to browser security
+
+### Desktop GUI (desktop_gui.py)
+
+- **Best for**: File path control, flexible output locations
+- **File location**: Configurable (same folder, Downloads, or custom)
+- **Pros**: Full file path access, multiple output options
+- **Cons**: Requires tkinter (usually included with Python)
+
+### Standalone Script (scripts/run_cleaner.py)
+
+- **Best for**: Automation, scheduled processing
+- **File location**: Same folder as source files
+- **Pros**: No UI overhead, scriptable
+- **Cons**: Manual configuration only
+
 ## Configuration
 
 ### Web Configuration (Recommended)
@@ -107,6 +142,7 @@ python -m tests.test_quality_detection
 mkv-manager/
 ├── core/                    # Core processing logic (standalone)
 ├── web/                     # Flask web interface
+├── desktop/                 # Desktop GUI with file path control
 ├── tests/                   # Test suite
 ├── scripts/                 # Utility scripts
 └── requirements.txt

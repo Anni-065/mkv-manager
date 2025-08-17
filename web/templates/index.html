@@ -52,61 +52,25 @@
             <div>
               <label style="display: block; margin-bottom: 10px; font-weight: bold; color: #34495e;">Allowed Audio Languages:</label>
               <div style="display: flex; flex-direction: column; gap: 8px;">
+                {% for lang_code, lang_name in config.AVAILABLE_AUDIO_LANGS.items() %}
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="audio_eng" name="allowed_audio_langs" value="eng"
-                         {{ 'checked' if 'eng' in config.ALLOWED_AUDIO_LANGS else '' }}>
-                  <label for="audio_eng">English (eng)</label>
+                  <input type="checkbox" id="audio_{{ lang_code }}" name="allowed_audio_langs" value="{{ lang_code }}"
+                         {{ 'checked' if lang_code in config.ALLOWED_AUDIO_LANGS else '' }}>
+                  <label for="audio_{{ lang_code }}">{{ lang_name }} ({{ lang_code }})</label>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="audio_ger" name="allowed_audio_langs" value="ger"
-                         {{ 'checked' if 'ger' in config.ALLOWED_AUDIO_LANGS else '' }}>
-                  <label for="audio_ger">German (ger)</label>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="audio_kor" name="allowed_audio_langs" value="kor"
-                         {{ 'checked' if 'kor' in config.ALLOWED_AUDIO_LANGS else '' }}>
-                  <label for="audio_kor">Korean (kor)</label>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="audio_jpn" name="allowed_audio_langs" value="jpn"
-                         {{ 'checked' if 'jpn' in config.ALLOWED_AUDIO_LANGS else '' }}>
-                  <label for="audio_jpn">Japanese (jpn)</label>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="audio_gre" name="allowed_audio_langs" value="gre"
-                         {{ 'checked' if 'gre' in config.ALLOWED_AUDIO_LANGS else '' }}>
-                  <label for="audio_gre">Greek (gre)</label>
-                </div>
+                {% endfor %}
               </div>
             </div>
             <div>
               <label style="display: block; margin-bottom: 10px; font-weight: bold; color: #34495e;">Allowed Subtitle Languages:</label>
               <div style="display: flex; flex-direction: column; gap: 8px;">
+                {% for lang_code, lang_name in config.AVAILABLE_SUB_LANGS.items() %}
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="sub_eng" name="allowed_sub_langs" value="eng"
-                         {{ 'checked' if 'eng' in config.ALLOWED_SUB_LANGS else '' }}>
-                  <label for="sub_eng">English (eng)</label>
+                  <input type="checkbox" id="sub_{{ lang_code }}" name="allowed_sub_langs" value="{{ lang_code }}"
+                         {{ 'checked' if lang_code in config.ALLOWED_SUB_LANGS else '' }}>
+                  <label for="sub_{{ lang_code }}">{{ lang_name }} ({{ lang_code }})</label>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="sub_ger" name="allowed_sub_langs" value="ger"
-                         {{ 'checked' if 'ger' in config.ALLOWED_SUB_LANGS else '' }}>
-                  <label for="sub_ger">German (ger)</label>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="sub_kor" name="allowed_sub_langs" value="kor"
-                         {{ 'checked' if 'kor' in config.ALLOWED_SUB_LANGS else '' }}>
-                  <label for="sub_kor">Korean (kor)</label>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="sub_jpn" name="allowed_sub_langs" value="jpn"
-                         {{ 'checked' if 'jpn' in config.ALLOWED_SUB_LANGS else '' }}>
-                  <label for="sub_jpn">Japanese (jpn)</label>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="sub_gre" name="allowed_sub_langs" value="gre"
-                         {{ 'checked' if 'gre' in config.ALLOWED_SUB_LANGS else '' }}>
-                  <label for="sub_gre">Greek (gre)</label>
-                </div>
+                {% endfor %}
               </div>
             </div>
           </div>
@@ -115,22 +79,18 @@
             <div>
               <label for="default_audio_lang" style="display: block; margin-bottom: 5px; font-weight: bold; color: #34495e;">Default Audio Language:</label>
               <select id="default_audio_lang" name="default_audio_lang" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="eng" {{ 'selected' if config.DEFAULT_AUDIO_LANG == 'eng' else '' }}>English (eng)</option>
-                <option value="ger" {{ 'selected' if config.DEFAULT_AUDIO_LANG == 'ger' else '' }}>German (ger)</option>
-                <option value="kor" {{ 'selected' if config.DEFAULT_AUDIO_LANG == 'kor' else '' }}>Korean (kor)</option>
-                <option value="jpn" {{ 'selected' if config.DEFAULT_AUDIO_LANG == 'jpn' else '' }}>Japanese (jpn)</option>
-                <option value="gre" {{ 'selected' if config.DEFAULT_AUDIO_LANG == 'gre' else '' }}>Greek (gre)</option>
+                {% for lang_code, lang_name in config.AVAILABLE_AUDIO_LANGS.items() %}
+                <option value="{{ lang_code }}" {{ 'selected' if config.DEFAULT_AUDIO_LANG == lang_code else '' }}>{{ lang_name }} ({{ lang_code }})</option>
+                {% endfor %}
               </select>
             </div>
             
             <div>
               <label for="default_subtitle_lang" style="display: block; margin-bottom: 5px; font-weight: bold; color: #34495e;">Default Subtitle Language:</label>
               <select id="default_subtitle_lang" name="default_subtitle_lang" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="eng" {{ 'selected' if config.DEFAULT_SUBTITLE_LANG == 'eng' else '' }}>English (eng)</option>
-                <option value="ger" {{ 'selected' if config.DEFAULT_SUBTITLE_LANG == 'ger' else '' }}>German (ger)</option>
-                <option value="kor" {{ 'selected' if config.DEFAULT_SUBTITLE_LANG == 'kor' else '' }}>Korean (kor)</option>
-                <option value="jpn" {{ 'selected' if config.DEFAULT_SUBTITLE_LANG == 'jpn' else '' }}>Japanese (jpn)</option>
-                <option value="gre" {{ 'selected' if config.DEFAULT_SUBTITLE_LANG == 'gre' else '' }}>Greek (gre)</option>
+                {% for lang_code, lang_name in config.AVAILABLE_SUB_LANGS.items() %}
+                <option value="{{ lang_code }}" {{ 'selected' if config.DEFAULT_SUBTITLE_LANG == lang_code else '' }}>{{ lang_name }} ({{ lang_code }})</option>
+                {% endfor %}
               </select>
             </div>
           </div>
@@ -139,22 +99,18 @@
             <div>
               <label for="original_audio_lang" style="display: block; margin-bottom: 5px; font-weight: bold; color: #34495e;">Original Audio Language:</label>
               <select id="original_audio_lang" name="original_audio_lang" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="eng" {{ 'selected' if config.ORIGINAL_AUDIO_LANG == 'eng' else '' }}>English (eng)</option>
-                <option value="ger" {{ 'selected' if config.ORIGINAL_AUDIO_LANG == 'ger' else '' }}>German (ger)</option>
-                <option value="kor" {{ 'selected' if config.ORIGINAL_AUDIO_LANG == 'kor' else '' }}>Korean (kor)</option>
-                <option value="jpn" {{ 'selected' if config.ORIGINAL_AUDIO_LANG == 'jpn' else '' }}>Japanese (jpn)</option>
-                <option value="gre" {{ 'selected' if config.ORIGINAL_AUDIO_LANG == 'gre' else '' }}>Greek (gre)</option>
+                {% for lang_code, lang_name in config.AVAILABLE_AUDIO_LANGS.items() %}
+                <option value="{{ lang_code }}" {{ 'selected' if config.ORIGINAL_AUDIO_LANG == lang_code else '' }}>{{ lang_name }} ({{ lang_code }})</option>
+                {% endfor %}
               </select>
             </div>
             
             <div>
               <label for="original_subtitle_lang" style="display: block; margin-bottom: 5px; font-weight: bold; color: #34495e;">Original Subtitle Language:</label>
               <select id="original_subtitle_lang" name="original_subtitle_lang" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="eng" {{ 'selected' if config.ORIGINAL_SUBTITLE_LANG == 'eng' else '' }}>English (eng)</option>
-                <option value="ger" {{ 'selected' if config.ORIGINAL_SUBTITLE_LANG == 'ger' else '' }}>German (ger)</option>
-                <option value="kor" {{ 'selected' if config.ORIGINAL_SUBTITLE_LANG == 'kor' else '' }}>Korean (kor)</option>
-                <option value="jpn" {{ 'selected' if config.ORIGINAL_SUBTITLE_LANG == 'jpn' else '' }}>Japanese (jpn)</option>
-                <option value="gre" {{ 'selected' if config.ORIGINAL_SUBTITLE_LANG == 'gre' else '' }}>Greek (gre)</option>
+                {% for lang_code, lang_name in config.ALL_CONFIGURED_LANGS.items() %}
+                <option value="{{ lang_code }}" {{ 'selected' if config.ORIGINAL_SUBTITLE_LANG == lang_code else '' }}>{{ lang_name }} ({{ lang_code }})</option>
+                {% endfor %}
               </select>
             </div>
           </div>
@@ -166,14 +122,37 @@
       </div>
 
       <div class="section">
+        <h2>Subtitle Processing Options</h2>
+        <form method="POST" action="/update_settings">
+          <div style="margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 10px; font-weight: bold; color: #34495e;">
+              <input type="checkbox" id="extract_subtitles" name="extract_subtitles" {{ 'checked' if config.EXTRACT_SUBTITLES else '' }} style="transform: scale(1.2);">
+              <span>🔄 Convert subtitles to SRT format</span>
+            </label>
+            <p style="margin: 5px 0 0 32px; font-size: 0.9em; color: #7f8c8d;">
+              Extract and convert all supported subtitle formats to SRT during processing
+            </p>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 10px; font-weight: bold; color: #34495e;">
+              <input type="checkbox" id="save_extracted_subtitles" name="save_extracted_subtitles" {{ 'checked' if config.SAVE_EXTRACTED_SUBTITLES else '' }} style="transform: scale(1.2);">
+              <span>💾 Save extracted SRT files next to processed MKV</span>
+            </label>
+            <p style="margin: 5px 0 0 32px; font-size: 0.9em; color: #7f8c8d;">
+              Keep converted SRT files in the same directory as the processed MKV file
+            </p>
+          </div>
+          
+          <div style="text-align: center;">
+            <button type="submit" class="btn btn-primary">💾 Save Subtitle Settings</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="section">
         <div class="process-files-header">
           <h2>📁 Process Files</h2>
-        </div>
-        
-        <div class="process-files-description">
-          <strong>💡 How it works:</strong> Add <em>individual MKV files</em> or <em>entire folders</em> to process. Processed files will be saved in a "processed" folder next to the original files.
-          <br>
-          <strong> 📂 Supported:</strong> Individual .mkv files, folders containing .mkv files, or nested folder structures
         </div>
         
         <!-- Drag & Drop Zone -->
@@ -190,6 +169,18 @@
             <div class="drop-zone-overlay-content">
               <div class="drop-zone-overlay-icon">📂</div>
               <div class="drop-zone-overlay-text">Release to add files</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alternative File Selection Methods -->
+        <div class="file-selection-alternatives">
+          <div class="alternative-methods">
+            <h3>Alternative File Selection Methods</h3>
+            <div class="method-note">
+              <strong>💡 For better file path preservation:</strong> 
+              <a href="#" onclick="showDesktopGuiInfo()">Use the Desktop GUI version</a> 
+              which can process files directly from their original locations.
             </div>
           </div>
         </div>

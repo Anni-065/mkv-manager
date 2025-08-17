@@ -906,6 +906,58 @@ h3 {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+.alternative-methods h3 {
+  color: var(--gray-700);
+  margin-bottom: 1rem;
+  font-size: 110%;
+}
+
+.method-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.method-buttons .btn {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.method-note {
+  background: var(--primary-50);
+  border: 1px solid var(--primary-200);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: var(--gray-700);
+  margin-top: 1rem;
+}
+
+.method-note a {
+  color: var(--primary-600);
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.method-note a:hover {
+  color: var(--primary-700);
+}
+
+@media (max-width: 768px) {
+  .method-buttons {
+    flex-direction: column;
+  }
+
+  .method-buttons .btn {
+    flex: none;
+    min-width: auto;
+  }
+}
+
 /* Dropped Files Section */
 .dropped-files-section {
   background: var(--white);
@@ -933,6 +985,7 @@ h3 {
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
   background: var(--gray-50);
+  overflow-x: hidden;
 }
 
 .dropped-files-list::-webkit-scrollbar {
@@ -956,11 +1009,13 @@ h3 {
   border-bottom: 1px solid var(--gray-200);
   background: var(--white);
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 .dropped-file-item:hover {
   background: var(--primary-50);
   transform: translateX(4px);
+  overflow: hidden;
 }
 
 .dropped-file-item:last-child {
@@ -1064,22 +1119,6 @@ h3 {
   color: var(--gray-800);
   font-size: 1.5rem;
   font-weight: 700;
-}
-
-.process-files-description {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
-  padding: 1rem;
-  margin-bottom: 2rem;
-  color: var(--gray-700);
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-
-.process-files-description em {
-  color: var(--primary-700);
-  font-weight: 500;
 }
 
 /* Processing Idle State */

@@ -3,6 +3,7 @@ config.py
 *.log
 processed/
 mkv_process_log.txt
+
 # Test files
 tests
 test_*.py

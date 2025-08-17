@@ -94,8 +94,19 @@ function initializeDragAndDrop() {
 function setupDropZoneClick() {
   const dropZone = document.getElementById("dropZone");
   if (dropZone) {
-    dropZone.addEventListener("click", function () {
-      openFolderBrowserForDropZone();
+    dropZone.addEventListener("click", function (e) {
+      e.preventDefault();
+
+      // Show options to user
+      const choice = confirm(
+        "Choose file selection method:\n\nOK = Browse for individual files\nCancel = Browse for entire folder"
+      );
+
+      if (choice) {
+        browseForFiles();
+      } else {
+        browseForFolder();
+      }
     });
   }
 }
@@ -868,4 +879,28 @@ function processDirectoryFiles(folderStructure) {
   if (droppedFiles.length > 0 || document.querySelector(".dropped-file-item")) {
     document.getElementById("droppedFilesSection").style.display = "block";
   }
+}
+
+function showDesktopGuiInfo() {
+  const message = `
+🖥️ Desktop GUI Version
+
+The desktop GUI version provides better file path preservation and allows you to:
+
+• Process files directly from their original locations
+• Choose output folders more flexibly:
+  - Same folder as source files (with 'processed' subfolder)
+  - Downloads/MKV cleaner/Series Name/ structure
+  - Custom output folder of your choice
+• Maintain original file organization
+
+To use the desktop GUI:
+1. Open a terminal in the project folder
+2. Run: python desktop_gui.py
+3. Use the file browser to select files or folders
+
+This gives you full control over where processed files are saved!
+  `;
+
+  alert(message);
 }
