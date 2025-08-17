@@ -1,159 +1,101 @@
 # MKV Manager
 
-A modular Python tool for batch processing MKV files with intelligent filename parsing, track filtering, and a modern Flask web interface.
+A Python tool for batch processing MKV files with intelligent filename parsing, track filtering, and multiple interfaces.
 
 ## Features
 
-- **🎯 Intelligent Filename Parsing** - Extracts series titles, season/episode numbers, and episode titles from various formats
-- **🔄 Track Filtering** - Keep or remove audio/subtitle tracks based on language preferences
-- **🧹 Subtitle Deduplication** - Automatically removes duplicate subtitles, preferring same-source normal+forced pairs
-- **🌐 Modern Web Interface** - Flask-based UI with drag & drop support and real-time progress
-- **⚙️ Web Configuration** - Configure paths and language settings directly in the browser
-- **📦 Modular Architecture** - Core logic separated from web interface for better maintainability
-- **🗂️ Smart Organization** - Creates "processed" folders next to originals automatically
+- **Intelligent File Management** - Extracts series titles, season/episode numbers, and episode titles from various naming formats. Creates organized subfolders in the specified output path.
+- **Language-Based Track Filtering** - Keep or remove audio/subtitle tracks based on configurable language preferences. Preserves video quality while reducing file sizes through track removal.
+- **Subtitle Deduplication** - Automatically removes duplicate subtitles while preserving normal+forced pairs from the same source.
+- **Subtitle Conversion** - Convert subtitles to .srt to improve compatibility with video players. Optionally extract and save .srt subtitles next to the video files for manual editing.
+- **Multiple User Interfaces** - Choose from web UI with drag & drop, desktop GUI with full file control, or command line for automation.
+- **Real-time Progress** - Track processing status and view detailed logs during batch operations.
 
 ## Quick Start
 
 ### 1. Install Dependencies
 
 ```bash
-# Install MKVToolNix
-Windows: Download from https://mkvtoolnix.download/
-# Linux: sudo apt install mkvtoolnix
-# macOS: brew install mkvtoolnix
-
-# Install Python dependencies
+# Install MKVToolNix from https://mkvtoolnix.download/
 pip install -r requirements.txt
 ```
 
 ### 2. Configure
 
-- Copy `core/config_example.py` to `core/config.py` and edit paths
-- _Or_ configure everything through the web interface
+Copy `core/config_example.py` to `core/config.py` and edit default values, or configure via web interface.
+
+#### Configuration Options
+
+- **Language Preferences** - Set default audio and subtitle languages (e.g., English, German, Japanese)
+- **Output Paths** - Choose where processed files are saved
+- **Processing Behavior** - Enable/disable subtitle extraction, set filename formats
 
 ### 3. Run
 
-**Web Interface (Recommended):**
+**Web Interface:**
 
 ```bash
-cd web/
-python app.py
+cd web; python app.py
 ```
 
-**Desktop GUI (Better file path control):**
+Visit http://localhost:5000 to access the drag & drop interface.
+
+**Desktop GUI:**
 
 ```bash
-# From the desktop folder:
-cd desktop
-start_desktop_gui.bat
-
-# Or run directly:
-cd desktop
-python desktop_gui.py
+cd desktop; start_desktop_gui.bat
 ```
 
-**Standalone Script:**
+Provides full file browser and output path control.
+
+**Command Line:**
 
 ```bash
 python scripts/run_cleaner.py
 ```
 
-**Core Module:**
+Processes files from configured default folder.
 
-```python
-from core.mkv_cleaner import filter_and_remux
-filter_and_remux("path/to/video.mkv")
-```
+## How to Use
 
-## How It Works
+### Web Interface
 
-### Processing Workflow
+1. **Configure Settings** - Set audio/subtitle language preferences and file paths
+2. **Add Files** - Drag & drop MKV files or browse folders
+3. **Review Selection** - Check parsed filenames and track information
+4. **Process Files** - Start batch processing with real-time progress updates
+5. **Download Results** - Processed files are organized and ready for manual download
 
-1. **File Discovery** - Add files via drag & drop or folder browsing
-2. **Filename Parsing** - Extract series info and clean quality tags
-3. **Track Filtering** - Keep only specified audio/subtitle languages
-4. **Smart Organization** - Save processed files in "processed" subfolders
+### Desktop GUI
 
-### File Organization
+1. **Select Input Files** - Browse and select MKV files for processing
+2. **Choose Output Location** - Select where processed files should be saved (same folder, Downloads, or custom path)
+3. **Configure Languages** - Set preferred audio and subtitle languages
+4. **Start Processing** - Monitor progress and view detailed processing logs
+5. **Access Results** - Processed files are saved to your chosen location
 
-```
-/Your/Series/Folder/
-├── Series.S01E01.Messy.Filename.1080p.WEB-DL.mkv (original)
-└── processed/
-    └── Series - S01E01 - Messy Filename.mkv (cleaned)
-```
+### Command Line
 
-### Filename Examples
+1. **Run Script** - Execute `python scripts/run_cleaner.py`
+2. **Batch Processing** - All MKV files in the configured folder are processed automatically
+3. **Check Results** - Processed files appear in "processed" subfolders
 
-- `Show.Name.S01E01.Episode.Title.1080p.WEB-DL.mkv` → `Show Name - S01E01 - Episode Title.mkv`
-- `Series.S02E05.(WEB-DL.1080p).mkv` → `Series - S02E05 - Episode #2.5.mkv`
+## Interfaces
 
-## Interface Comparison
+| Interface   | Best For                    | File Control                                   | Setup            |
+| ----------- | --------------------------- | ---------------------------------------------- | ---------------- |
+| **Web**     | Batch processing, modern UI | Limited (due to browser security restrictions) | None             |
+| **Desktop** | Full file path control      | Complete                                       | Tkinter required |
+| **Script**  | Automation, scheduled runs  | Same folder only                               | Manual config    |
 
-### Web Interface (web/app.py)
+### Interface-Specific Features
 
-- **Best for**: Quick batch processing, modern UI
-- **File location**: Downloads/MKV cleaner/Series Name/
-- **Pros**: Drag & drop, real-time progress, no installation
-- **Cons**: Limited file path control due to browser security
-
-### Desktop GUI (desktop_gui.py)
-
-- **Best for**: File path control, flexible output locations
-- **File location**: Configurable (same folder, Downloads, or custom)
-- **Pros**: Full file path access, multiple output options
-- **Cons**: Requires tkinter (usually included with Python)
-
-### Standalone Script (scripts/run_cleaner.py)
-
-- **Best for**: Automation, scheduled processing
-- **File location**: Same folder as source files
-- **Pros**: No UI overhead, scriptable
-- **Cons**: Manual configuration only
-
-## Configuration
-
-### Web Configuration (Recommended)
-
-1. Start the web interface: `cd web/ && python app.py`
-2. Click "⚙️ Edit Paths" to configure mkvmerge path and default folder
-3. Use the main page to set language preferences
-
-### Manual Configuration
-
-Copy `core/config_example.py` to `core/config.py` and edit the key settings:
-
-- `MKVMERGE_PATH` - Path to mkvmerge executable
-- `MKV_FOLDER` - Default folder for browsing
-- `ALLOWED_SUB_LANGS` / `ALLOWED_AUDIO_LANGS` - Language preferences
-
-## Testing
-
-```bash
-# Run individual tests (from project root)
-python -m tests.test_simplified_titles
-python -m tests.test_subtitle_deduplication
-python -m tests.test_quality_detection
-```
-
-## Project Structure
-
-```
-mkv-manager/
-├── core/                    # Core processing logic (standalone)
-├── web/                     # Flask web interface
-├── desktop/                 # Desktop GUI with file path control
-├── tests/                   # Test suite
-├── scripts/                 # Utility scripts
-└── requirements.txt
-```
-
-## License
-
-MIT License - Local processing only, no data sent to external servers.
+- **Web**: Drag & drop file upload, real-time progress bars, downloadable results, browser-based configuration
+- **Desktop**: Native file dialogs, flexible output paths, detailed processing logs, offline operation
+- **Script**: Automated batch processing, configurable via files, suitable for scheduled tasks
 
 ## Requirements
 
 - Python 3.7+
 - [MKVToolNix](https://mkvtoolnix.download/) (mkvmerge)
-- Flask (for web interface)
+- Flask (web interface only)
