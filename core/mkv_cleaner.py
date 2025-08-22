@@ -670,7 +670,78 @@ def process_subtitles_with_conversion(file_path, output_folder, deduplicated_sub
     return subtitle_cmd_parts, subtitle_tracks, temp_files
 
 
-def filter_and_remux(file_path, output_folder=None, preferences=None, extract_subtitles=False):
+def run_mkvmerge(cmd, progress_callback):
+    """Run mkvmerge command and parse progress output"""
+    import subprocess
+    import re
+    import threading
+
+    print(f"DEBUG: Starting mkvmerge with progress monitoring")
+    print(f"DEBUG: Command: {' '.join(cmd)}")
+
+    try:
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            bufsize=0
+        )
+
+        progress_pattern = re.compile(r'\b\w+:\s*(100|[0-9]?[0-9])%')
+
+        def read_stdout():
+            for line in iter(process.stdout.readline, ''):
+                line = line.strip()
+                if line:
+                    print(f"STDOUT: {line}")
+                    match = progress_pattern.search(line)
+                    if match:
+                        progress = int(match.group(1))
+                        print(f"DEBUG: Found progress in stdout: {progress}%")
+                        try:
+                            progress_callback(progress)
+                            print(
+                                f"DEBUG: Called progress callback with {progress}%")
+                        except Exception as e:
+                            print(f"DEBUG: Error in progress callback: {e}")
+
+        def read_stderr():
+            for line in iter(process.stderr.readline, ''):
+                line = line.strip()
+                if line:
+                    print(f"STDERR: {line}")
+                    match = progress_pattern.search(line)
+                    if match:
+                        progress = int(match.group(1))
+                        print(f"DEBUG: Found progress in stderr: {progress}%")
+                        try:
+                            progress_callback(progress)
+                            print(
+                                f"DEBUG: Called progress callback with {progress}%")
+                        except Exception as e:
+                            print(f"DEBUG: Error in progress callback: {e}")
+
+        stdout_thread = threading.Thread(target=read_stdout)
+
+        stdout_thread.start()
+
+        process.wait()
+
+        stdout_thread.join()
+
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, cmd)
+
+        print(
+            f"DEBUG: mkvmerge completed with return code: {process.returncode}")
+
+    except Exception as e:
+        print(f"Error running mkvmerge: {e}")
+        raise
+
+
+def filter_and_remux(file_path, output_folder=None, preferences=None, extract_subtitles=False, progress_callback=None):
     source_dir = os.path.dirname(file_path)
 
     if preferences:
@@ -907,7 +978,10 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
     print(f"\nProcessing: {file_path}")
     print(f"Command: {' '.join(cmd)}")
 
-    subprocess.run(cmd, check=True)
+    if progress_callback:
+        run_mkvmerge(cmd, progress_callback)
+    else:
+        subprocess.run(cmd, check=True)
 
     print(f"Saved: {output_file}")
 

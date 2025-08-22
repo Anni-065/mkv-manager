@@ -89,9 +89,6 @@ class ProcessingController:
                         status_text = f"{ICONS['processing']} Processing: {file_info['name']}"
                         self.gui.root.after(0, lambda t=status_text: self.gui.progress_label.config(
                             text=t))
-                        progress_value = (processed_count / total_files) * 100
-                        self.gui.root.after(
-                            0, lambda p=progress_value: self.gui.progress_bar.config(value=p))
 
                         # Create preferences dict for the processing
                         preferences = {
@@ -105,8 +102,22 @@ class ProcessingController:
                             'SAVE_EXTRACTED_SUBTITLES': self.gui.save_extracted_subtitles.get()
                         }
 
+                        # Create progress callback that updates the progress bar
+                        def update_progress(mkvmerge_progress):
+                            print(
+                                f"DEBUG: Progress callback called with {mkvmerge_progress}%")
+                            # Calculate overall progress:
+                            # (completed files + current file progress) / total files
+                            file_progress = mkvmerge_progress / 100.0
+                            overall_progress = (
+                                (processed_count + file_progress) / total_files) * 100
+                            print(
+                                f"DEBUG: Updating progress bar to {overall_progress}%")
+                            self.gui.root.after(
+                                0, lambda p=overall_progress: self.gui.progress_bar.config(value=p))
+
                         filter_and_remux(
-                            file_info['path'], output_folder, preferences)
+                            file_info['path'], output_folder, preferences, progress_callback=update_progress)
 
                         processed_count += 1
 
