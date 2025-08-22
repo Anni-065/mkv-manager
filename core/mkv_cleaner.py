@@ -38,7 +38,10 @@ def is_forced_subtitle_by_name(track_name):
     track_name_lower = track_name.lower()
     forced_indicators = ['signs', 'songs', 'forced']
 
-    return any(indicator in track_name_lower for indicator in forced_indicators)
+    result = any(
+        indicator in track_name_lower for indicator in forced_indicators)
+
+    return result
 
 
 def get_track_info(file_path):
@@ -809,8 +812,17 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
         elif ttype == "subtitles":
             is_forced_original = forced and lang == original_subtitle_lang
             is_allowed_lang = lang in allowed_sub_langs
+            is_forced_for_audio = forced and lang in allowed_audio_langs
 
-            if is_allowed_lang or is_forced_original:
+            # Debug output for subtitle track collection
+            print(
+                f"DEBUG: Subtitle track {tid}: lang='{lang}', forced={forced}, track_name='{track_name}'")
+            print(
+                f"DEBUG: is_allowed_lang={is_allowed_lang}, is_forced_original={is_forced_original}, is_forced_for_audio={is_forced_for_audio}")
+            print(
+                f"DEBUG: allowed_sub_langs={allowed_sub_langs}, allowed_audio_langs={allowed_audio_langs}")
+
+            if is_allowed_lang or is_forced_original or is_forced_for_audio:
                 collected_subtitles.append({
                     "id": tid,
                     "lang": lang,
@@ -819,7 +831,11 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
                     "track_name": track_name,
                     "title": title
                 })
+                print(
+                    f"DEBUG: ✅ Collecting subtitle track {tid} [{title}] (track_name: '{track_name}')")
             else:
+                print(
+                    f"DEBUG: ❌ Skipping subtitle track {tid} [{title}] (track_name: '{track_name}')")
                 change_log.append(f"Removed subtitle track {tid} [{title}]")
 
     deduplicated_subtitles = deduplicate_subtitles(collected_subtitles)
@@ -1343,14 +1359,15 @@ def deduplicate_subtitles(subtitle_tracks):
     result = []
 
     for lang, tracks in lang_groups.items():
+
         if len(tracks) <= 1:
             result.extend(tracks)
-            continue
 
         normal_tracks = [t for t in tracks if not t["forced"]]
         forced_tracks = [t for t in tracks if t["forced"]]
 
         sources = {}
+        unsourced_tracks = {"normal": [], "forced": []}
         all_tracks = normal_tracks + forced_tracks
 
         for track in all_tracks:
@@ -1364,6 +1381,12 @@ def deduplicate_subtitles(subtitle_tracks):
                     sources[source]["forced"].append(track)
                 else:
                     sources[source]["normal"].append(track)
+
+            else:
+                if track["forced"]:
+                    unsourced_tracks["forced"].append(track)
+                else:
+                    unsourced_tracks["normal"].append(track)
 
         best_source = None
         best_score = -1
@@ -1385,14 +1408,18 @@ def deduplicate_subtitles(subtitle_tracks):
                 best_score = score
                 best_source = source
 
+        print(f"DEBUG: Best source: '{best_source}' with score: {best_score}")
+
         if best_source and best_source in sources:
             result.extend(sources[best_source]["normal"])
             result.extend(sources[best_source]["forced"])
-        else:
-            if normal_tracks:
-                result.append(normal_tracks[0])
-            if forced_tracks:
-                result.append(forced_tracks[0])
+
+        if unsourced_tracks["normal"]:
+            if not (best_source and sources.get(best_source, {}).get("normal", [])):
+                result.extend(unsourced_tracks["normal"])
+
+        if unsourced_tracks["forced"]:
+            result.extend(unsourced_tracks["forced"])
 
     return result
 
