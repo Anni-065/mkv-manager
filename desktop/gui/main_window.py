@@ -9,7 +9,7 @@ from .components import (
 )
 from .mixins import ScrollMixin, DragDropMixin
 from styles import ModernStyleManager, ModernColorScheme
-from core.constants import LANG_TITLES
+from core.config.constants import LANG_TITLES
 from controllers import MKVCleanerController
 import tkinter as tk
 from tkinter import ttk
@@ -34,7 +34,7 @@ try:
     print("✅ Using personal config.py")
 except ImportError:
     try:
-        from core.config_example import *
+        from core.config import *
         print("⚠️ Using config_example.py - Consider creating a personal config.py")
     except ImportError:
         print("❌ No configuration file found!")

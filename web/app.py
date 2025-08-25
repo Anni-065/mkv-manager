@@ -1,20 +1,16 @@
-from core.constants import LANG_TITLES
-import shutil
-from datetime import datetime
-import threading
-import subprocess
-import re
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+import re
+import subprocess
+import threading
+from datetime import datetime
+import shutil
+from core import extract_series_info, get_track_info, filter_and_remux
+from core.config.constants import LANG_TITLES
 import sys
 import os
-import importlib
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-mkv_cleaner = importlib.import_module('core.mkv_cleaner')
-extract_series_info = mkv_cleaner.extract_series_info
-get_track_info = mkv_cleaner.get_track_info
-filter_and_remux = mkv_cleaner.filter_and_remux
 
 # Import language titles from constants
 
@@ -23,7 +19,7 @@ try:
     print("✅ Web interface using config.py")
 except ImportError:
     try:
-        from core.config_example import *
+        from core.config import *
         print("⚠️ Web interface using config_example.py - Consider creating config.py")
     except ImportError:
         print("❌ No configuration file found!")
@@ -57,22 +53,6 @@ processing_status = {
     'total_files': 0,
     'log': []
 }
-
-
-def update_mkv_cleaner_config():
-    """Update the mkv_cleaner module with current config"""
-
-    mkv_cleaner.MKVMERGE_PATH = config['MKVMERGE_PATH']
-    mkv_cleaner.MKV_FOLDER = config['MKV_FOLDER']
-    mkv_cleaner.OUTPUT_FOLDER = os.path.join(config['MKV_FOLDER'], "processed")
-    mkv_cleaner.ALLOWED_SUB_LANGS = set(config['ALLOWED_SUB_LANGS'])
-    mkv_cleaner.ALLOWED_AUDIO_LANGS = set(config['ALLOWED_AUDIO_LANGS'])
-    mkv_cleaner.DEFAULT_AUDIO_LANG = config['DEFAULT_AUDIO_LANG']
-    mkv_cleaner.DEFAULT_SUBTITLE_LANG = config['DEFAULT_SUBTITLE_LANG']
-    mkv_cleaner.ORIGINAL_AUDIO_LANG = config['ORIGINAL_AUDIO_LANG']
-    mkv_cleaner.ORIGINAL_SUBTITLE_LANG = config['ORIGINAL_SUBTITLE_LANG']
-    mkv_cleaner.LOG_FILE = os.path.join(
-        mkv_cleaner.OUTPUT_FOLDER, "mkv_process_log.txt")
 
 
 @app.route('/')
@@ -155,8 +135,6 @@ def process_files():
     else:
         processing_status['log'].append(
             f"📁 Scanning default path: {config['MKV_FOLDER']}")
-
-    update_mkv_cleaner_config()
 
     def process_thread():
         try:
@@ -406,8 +384,6 @@ def process_files_from_paths(file_paths):
     if not valid_files:
         return jsonify({'error': 'No valid MKV files found'})
 
-    update_mkv_cleaner_config()
-
     def process_thread():
         try:
             processing_status['is_running'] = True
@@ -514,8 +490,6 @@ def process_uploaded_files():
 
     os.makedirs(output_folder, exist_ok=True)
     processing_status['log'].append(f"📁 Output folder: {output_folder}")
-
-    update_mkv_cleaner_config()
 
     def process_thread():
         try:

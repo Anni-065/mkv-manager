@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
 
 try:
-    from core.mkv_cleaner import filter_and_remux
+    from core import filter_and_remux
 except ImportError:
     def filter_and_remux(input_path, output_folder, preferences):
         raise ImportError("filter_and_remux function not available")
@@ -90,7 +90,6 @@ class ProcessingController:
                         self.gui.root.after(0, lambda t=status_text: self.gui.progress_label.config(
                             text=t))
 
-                        # Create preferences dict for the processing
                         preferences = {
                             'ALLOWED_AUDIO_LANGS': self.language_config['allowed_audio_langs'],
                             'ALLOWED_SUB_LANGS': self.language_config['allowed_sub_langs'],
@@ -102,17 +101,10 @@ class ProcessingController:
                             'SAVE_EXTRACTED_SUBTITLES': self.gui.save_extracted_subtitles.get()
                         }
 
-                        # Create progress callback that updates the progress bar
                         def update_progress(mkvmerge_progress):
-                            print(
-                                f"DEBUG: Progress callback called with {mkvmerge_progress}%")
-                            # Calculate overall progress:
-                            # (completed files + current file progress) / total files
                             file_progress = mkvmerge_progress / 100.0
                             overall_progress = (
                                 (processed_count + file_progress) / total_files) * 100
-                            print(
-                                f"DEBUG: Updating progress bar to {overall_progress}%")
                             self.gui.root.after(
                                 0, lambda p=overall_progress: self.gui.progress_bar.config(value=p))
 
@@ -140,7 +132,6 @@ class ProcessingController:
                 "Error", f"Processing failed: {str(e)}"))
 
         finally:
-            # Clear the file list after processing is complete
             self.gui.root.after(
                 0, self.file_selection_controller.clear_selection)
             self.gui.root.after(0, lambda: self.gui.process_button.config(

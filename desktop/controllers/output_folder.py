@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
 
 try:
-    from core.mkv_cleaner import extract_series_info
+    from core import extract_series_info
 except ImportError:
     def extract_series_info(filename):
         return ("Unknown", "Unknown")

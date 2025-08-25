@@ -18,7 +18,7 @@ try:
     print("✅ Using personal config.py")
 except ImportError:
     try:
-        from core.config_example import *
+        from core.config import *
         print("⚠️ Using config_example.py - Consider creating a personal config.py")
     except ImportError:
         print("❌ No configuration file found!")

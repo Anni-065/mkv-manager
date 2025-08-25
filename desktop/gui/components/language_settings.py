@@ -9,6 +9,9 @@ from tkinter import ttk
 import os
 import sys
 
+from core.config import ALLOWED_AUDIO_LANGS, ALLOWED_SUB_LANGS
+from core.config.constants import LANG_TITLES
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 components_dir = os.path.dirname(current_dir)
 gui_dir = os.path.dirname(components_dir)
@@ -63,11 +66,6 @@ class LanguageSettingsComponent:
     def _create_language_content(self):
         """Create the language settings content"""
 
-        from core.config import (ALLOWED_AUDIO_LANGS, ALLOWED_SUB_LANGS,
-                                 DEFAULT_AUDIO_LANG, DEFAULT_SUBTITLE_LANG,
-                                 ORIGINAL_AUDIO_LANG, ORIGINAL_SUBTITLE_LANG)
-        from core.constants import LANG_TITLES
-
         self.language_settings_inner = ttk.Frame(
             self.language_settings_content, style='Modern.TFrame')
         self.language_settings_inner.grid(
@@ -87,9 +85,6 @@ class LanguageSettingsComponent:
 
     def _create_audio_section(self):
         """Create the audio language section"""
-
-        from core.config import ALLOWED_AUDIO_LANGS
-        from core.constants import LANG_TITLES
 
         audio_frame = ttk.Frame(
             self.language_settings_inner, style='Modern.TFrame')
@@ -128,8 +123,6 @@ class LanguageSettingsComponent:
 
     def _create_audio_combos(self, audio_frame):
         """Create audio comboboxes"""
-        from core.config import ALLOWED_AUDIO_LANGS
-        from core.constants import LANG_TITLES
 
         default_audio_label = ttk.Label(audio_frame, text="Default Audio:",
                                         style='Modern.TLabel')
@@ -161,8 +154,6 @@ class LanguageSettingsComponent:
 
     def _create_subtitle_section(self):
         """Create the subtitle language section"""
-        from core.config import ALLOWED_SUB_LANGS, ALLOWED_AUDIO_LANGS
-        from core.constants import LANG_TITLES
 
         subtitle_frame = ttk.Frame(
             self.language_settings_inner, style='Modern.TFrame')
@@ -202,8 +193,6 @@ class LanguageSettingsComponent:
 
     def _create_subtitle_combos(self, subtitle_frame):
         """Create subtitle comboboxes"""
-        from core.config import ALLOWED_SUB_LANGS, ALLOWED_AUDIO_LANGS
-        from core.constants import LANG_TITLES
 
         default_subtitle_label = ttk.Label(subtitle_frame, text="Default Subtitle:",
                                            style='Modern.TLabel')
