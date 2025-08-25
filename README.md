@@ -99,3 +99,26 @@ Processes files from configured default folder.
 - Python 3.7+
 - [MKVToolNix](https://mkvtoolnix.download/) (mkvmerge)
 - Flask (web interface only)
+
+## Building from Source
+
+To create the installer:
+
+1. **Install build dependencies:**
+
+   ```bash
+   pip install pyinstaller
+   # Download and install NSIS from https://nsis.sourceforge.io/
+   ```
+
+2. **Build the installer:**
+
+   ```bash
+   # Windows
+   packaging\build.bat
+
+   # Cross-platform alternative (not tested)
+   python packaging\build.py
+   ```
+
+For detailed build instructions, see [`packaging/README.md`](packaging/README.md).

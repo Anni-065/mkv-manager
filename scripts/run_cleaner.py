@@ -6,7 +6,7 @@ This script provides a command-line interface for running the MKV Manager
 core functionality without the web interface.
 """
 
-from core.mkv_cleaner import main as run_mkv_cleaner
+from core.main import main as run_mkv_cleaner
 import sys
 import os
 
