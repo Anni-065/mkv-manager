@@ -1,4 +1,3 @@
-
 LANG_TITLES = {
     "eng": "English",
     "spa": "Spanish",
