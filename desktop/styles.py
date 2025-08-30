@@ -29,10 +29,6 @@ class ModernColorScheme:
             'success_light': '#dcfce7',     # Light green background
             'success_hover': '#166534',     # Darker green hover
 
-            'warning': '#9a6700',           # Darker amber for better contrast
-            'warning_light': '#fef3c7',     # Light amber background
-            'warning_hover': '#92400e',     # Darker amber hover
-
             'danger': '#cf222e',            # Darker red for better contrast
             'danger_light': '#ffeef0',      # Light red background
             'danger_hover': '#a40e26',      # Darker red hover
@@ -433,6 +429,14 @@ class UIHelpers:
                 "border_color": None,
                 "border_width": 0
             },
+            "info": {
+                "bg": colors['accent_light'],
+                "fg": colors['accent'],
+                "hover_bg": colors['accent_light'],
+                "active_bg": colors['accent_light'],
+                "border_color": colors['accent'],
+                "border_width": 1
+            },
             "secondary": {
                 "bg": colors['card_bg'],
                 "fg": colors['button_border'],
@@ -654,9 +658,9 @@ class UIHelpers:
                 return tk.DISABLED if button_state["disabled"] else tk.NORMAL
             return None
 
-        container.config = config_wrapper
-        container.configure = config_wrapper
-        container.cget = cget_wrapper
+        setattr(container, 'config', config_wrapper)
+        setattr(container, 'configure', config_wrapper)
+        setattr(container, 'cget', cget_wrapper)
         container['state'] = tk.NORMAL
 
         return container
@@ -729,8 +733,8 @@ class UIHelpers:
         status_colors = {
             'info': colors['accent_light'],
             'success': colors['success_light'],
-            'warning': colors['warning_light'],
-            'error': colors['danger_light']
+            'danger': colors['danger_light'],
+            'error': colors['danger']
         }
 
         frame = tk.Frame(parent, bg=status_colors.get(status_type, colors['accent_light']),

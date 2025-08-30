@@ -73,6 +73,8 @@ class OutputOptionsComponent:
             custom_frame, text="Browse", command=self.controller.browse_custom_folder,
             button_type="secondary", colors=self.colors, width=80, height=30
         )
-        browse_custom_btn.grid(row=0, column=1)
+
+        if browse_custom_btn:
+            browse_custom_btn.grid(row=0, column=1)
 
         return output_frame
