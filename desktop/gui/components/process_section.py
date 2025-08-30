@@ -47,6 +47,7 @@ class ProcessSectionComponent:
             process_frame, text="🚀 Process Files", command=self.controller.process_files,
             button_type="primary", colors=self.colors, width=200, height=45
         )
-        process_button.grid(row=2, column=0, pady=(0, 10))
+        if process_button:
+            process_button.grid(row=2, column=0, pady=(0, 10))
 
         return process_frame, progress_bar, progress_label, process_button

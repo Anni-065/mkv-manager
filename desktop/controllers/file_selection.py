@@ -5,7 +5,7 @@ Handles file browsing, folder browsing, drag & drop, and file list management
 
 import os
 from tkinter import filedialog, messagebox
-from pathlib import Path
+from typing import Tuple, Union, Optional
 
 try:
     from tkinterdnd2 import DND_FILES, TkinterDnD
@@ -20,8 +20,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 try:
     from core import extract_series_info
 except ImportError:
-    def extract_series_info(filename):
-        return ("Unknown", "Unknown")
+    def extract_series_info(filename: str) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int], Optional[str]]:
+        return ("Unknown", "Unknown", None, None, None)
 
 
 class FileSelectionController:

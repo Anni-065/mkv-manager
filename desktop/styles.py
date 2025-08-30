@@ -7,6 +7,24 @@ This module contains all color schemes, ttk styles, and UI configuration
 import tkinter as tk
 from tkinter import ttk
 
+# lazy import to avoid circular import errors
+HAS_IMAGES = None
+get_icon = None
+
+
+def _lazy_import_icons():
+    """Lazy import of icon utilities to avoid circular imports"""
+    global HAS_IMAGES, get_icon
+    if HAS_IMAGES is None:
+        try:
+            from gui.utils.image_utils import get_icon as _get_icon
+            HAS_IMAGES = True
+            get_icon = _get_icon
+        except ImportError:
+            HAS_IMAGES = False
+            get_icon = None
+    return HAS_IMAGES, get_icon
+
 
 class ModernColorScheme:
     """Modern color scheme with enhanced contrast and accessibility"""
@@ -28,10 +46,6 @@ class ModernColorScheme:
             'success': '#1a7f37',           # Darker green for better contrast
             'success_light': '#dcfce7',     # Light green background
             'success_hover': '#166534',     # Darker green hover
-
-            'warning': '#9a6700',           # Darker amber for better contrast
-            'warning_light': '#fef3c7',     # Light amber background
-            'warning_hover': '#92400e',     # Darker amber hover
 
             'danger': '#cf222e',            # Darker red for better contrast
             'danger_light': '#ffeef0',      # Light red background
@@ -433,6 +447,14 @@ class UIHelpers:
                 "border_color": None,
                 "border_width": 0
             },
+            "info": {
+                "bg": colors['accent_light'],
+                "fg": colors['accent'],
+                "hover_bg": colors['accent_light'],
+                "active_bg": colors['accent_light'],
+                "border_color": colors['accent'],
+                "border_width": 1
+            },
             "secondary": {
                 "bg": colors['card_bg'],
                 "fg": colors['button_border'],
@@ -654,9 +676,9 @@ class UIHelpers:
                 return tk.DISABLED if button_state["disabled"] else tk.NORMAL
             return None
 
-        container.config = config_wrapper
-        container.configure = config_wrapper
-        container.cget = cget_wrapper
+        setattr(container, 'config', config_wrapper)
+        setattr(container, 'configure', config_wrapper)
+        setattr(container, 'cget', cget_wrapper)
         container['state'] = tk.NORMAL
 
         return container
@@ -729,13 +751,264 @@ class UIHelpers:
         status_colors = {
             'info': colors['accent_light'],
             'success': colors['success_light'],
-            'warning': colors['warning_light'],
-            'error': colors['danger_light']
+            'danger': colors['danger_light'],
+            'error': colors['danger']
         }
 
         frame = tk.Frame(parent, bg=status_colors.get(status_type, colors['accent_light']),
                          relief='solid', bd=1, highlightthickness=0)
         return frame
+
+    @staticmethod
+    def create_image_button(parent, text, command, button_type="primary", colors=None, image=None, icon_type=None, is_light=True, **kwargs):
+        """Create a button with custom colors and optional image support"""
+        if colors is None:
+            return None
+
+        if icon_type and not image:
+            has_images, icon_func = _lazy_import_icons()
+            if has_images and icon_func:
+                image = icon_func(icon_type, is_light=is_light)
+
+        button_styles = {
+            "primary": {
+                "bg": colors['accent'],
+                "fg": "white",
+                "hover_bg": colors['accent_hover'],
+                "active_bg": colors['accent_dark'],
+                "border_color": None,
+                "border_width": 0
+            },
+            "secondary": {
+                "bg": colors['card_bg'],
+                "fg": colors['button_border'],
+                "hover_bg": colors['surface'],
+                "active_bg": colors['border_light'],
+                "border_color": colors['button_border'],
+                "border_width": 2
+            },
+            "success": {
+                "bg": colors['success'],
+                "fg": "white",
+                "hover_bg": colors['success_hover'],
+                "active_bg": colors['success_hover'],
+                "border_color": None,
+                "border_width": 0
+            },
+            "danger": {
+                "bg": colors['danger'],
+                "fg": "white",
+                "hover_bg": colors['danger_hover'],
+                "active_bg": colors['danger_hover'],
+                "border_color": None,
+                "border_width": 0
+            },
+            "icon": {
+                "bg": None,
+                "fg": None,
+                "hover_bg": None,
+                "active_bg": None,
+                "border_color": None,
+                "border_width": 0
+            }
+        }
+
+        style = button_styles.get(button_type, button_styles["primary"])
+
+        padx = kwargs.get('padx', 20)
+        pady = kwargs.get('pady', 8)
+
+        try:
+            parent_bg = parent.cget('bg')
+        except:
+            parent_bg = colors['bg']
+
+        container = tk.Frame(parent, bg=parent_bg)
+        canvas = tk.Canvas(container, highlightthickness=0,
+                           bg=parent_bg, cursor='hand2')
+
+        temp_label = tk.Label(container, text=text,
+                              font=('Segoe UI', 10, 'bold'))
+        temp_label.update_idletasks()
+        text_width = temp_label.winfo_reqwidth()
+        text_height = temp_label.winfo_reqheight()
+        temp_label.destroy()
+
+        image_width = 16 if image else 0
+        image_padding = 5 if image else 0
+
+        button_width = text_width + (padx * 2) + image_width + image_padding
+        button_height = max(text_height + (pady * 2), 35)
+        corner_radius = 8
+
+        canvas.configure(width=button_width, height=button_height)
+
+        def draw_rounded_rect(canvas, x1, y1, x2, y2, radius, fill_color, border_color=None, border_width=0):
+            canvas.delete("button_bg")
+            canvas.delete("button_border")
+            canvas.delete("button_text")
+            canvas.delete("button_image")
+
+            if button_type == "icon":
+                content_x = button_width // 2
+
+                if image:
+                    if text and text.strip():
+                        image_x = content_x - \
+                            (image_width + image_padding +
+                             text_width) // 2 + image_width // 2
+                        text_x = image_x + image_width // 2 + image_padding + text_width // 2
+
+                        canvas.create_image(
+                            image_x, button_height // 2, image=image, tags="button_image")
+                        canvas.create_text(text_x, button_height // 2, text=text, fill=colors['text'],
+                                           font=('Segoe UI', 10, 'bold'), tags="button_text")
+                    else:
+                        canvas.create_image(
+                            content_x, button_height // 2, image=image, tags="button_image")
+                elif text and text.strip():
+                    canvas.create_text(content_x, button_height // 2, text=text, fill=colors['text'],
+                                       font=('Segoe UI', 10, 'bold'), tags="button_text")
+                return
+
+            if fill_color:
+                canvas.create_rectangle(x1 + radius, y1, x2 - radius, y2,
+                                        fill=fill_color, outline="", tags="button_bg")
+                canvas.create_rectangle(x1, y1 + radius, x2, y2 - radius,
+                                        fill=fill_color, outline="", tags="button_bg")
+
+                canvas.create_arc(x1, y1, x1 + 2*radius, y1 + 2*radius,
+                                  start=90, extent=90, fill=fill_color, outline="", tags="button_bg")
+                canvas.create_arc(x2 - 2*radius, y1, x2, y1 + 2*radius,
+                                  start=0, extent=90, fill=fill_color, outline="", tags="button_bg")
+                canvas.create_arc(x1, y2 - 2*radius, x1 + 2*radius, y2,
+                                  start=180, extent=90, fill=fill_color, outline="", tags="button_bg")
+                canvas.create_arc(x2 - 2*radius, y2 - 2*radius, x2, y2,
+                                  start=270, extent=90, fill=fill_color, outline="", tags="button_bg")
+
+            if border_color and border_width > 0:
+                if button_type == "secondary":
+                    canvas.create_rectangle(x1 + radius, y1, x2 - radius, y1 + border_width,
+                                            fill=border_color, outline="", tags="button_border")
+                    canvas.create_rectangle(x1 + radius, y2 - border_width, x2 - radius, y2,
+                                            fill=border_color, outline="", tags="button_border")
+                    canvas.create_rectangle(x1, y1 + radius, x1 + border_width, y2 - radius,
+                                            fill=border_color, outline="", tags="button_border")
+                    canvas.create_rectangle(x2 - border_width, y1 + radius, x2, y2 - radius,
+                                            fill=border_color, outline="", tags="button_border")
+
+                    corner_size = radius
+                    for i in range(corner_size):
+                        for j in range(corner_size):
+                            dx = corner_size - i
+                            dy = corner_size - j
+                            distance = (dx*dx + dy*dy) ** 0.5
+
+                            if corner_size - border_width <= distance <= corner_size:
+                                canvas.create_rectangle(x1 + i, y1 + j, x1 + i + 1, y1 + j + 1,
+                                                        fill=border_color, outline="", tags="button_border")
+
+                    for i in range(corner_size):
+                        for j in range(corner_size):
+                            dx = i + 1
+                            dy = corner_size - j
+                            distance = (dx*dx + dy*dy) ** 0.5
+
+                            if corner_size - border_width <= distance <= corner_size:
+                                canvas.create_rectangle(x2 - corner_size + i, y1 + j, x2 - corner_size + i + 1, y1 + j + 1,
+                                                        fill=border_color, outline="", tags="button_border")
+
+                    for i in range(corner_size):
+                        for j in range(corner_size):
+                            dx = corner_size - i
+                            dy = j + 1
+                            distance = (dx*dx + dy*dy) ** 0.5
+
+                            if corner_size - border_width <= distance <= corner_size:
+                                canvas.create_rectangle(x1 + i, y2 - corner_size + j, x1 + i + 1, y2 - corner_size + j + 1,
+                                                        fill=border_color, outline="", tags="button_border")
+
+                    for i in range(corner_size):
+                        for j in range(corner_size):
+                            dx = i + 1
+                            dy = j + 1
+                            distance = (dx*dx + dy*dy) ** 0.5
+                            if corner_size - border_width <= distance <= corner_size:
+                                canvas.create_rectangle(x2 - corner_size + i, y2 - corner_size + j,
+                                                        x2 - corner_size + i + 1, y2 - corner_size + j + 1,
+                                                        fill=border_color, outline="", tags="button_border")
+                else:
+                    canvas.create_rectangle(x1, y1, x2, y2, outline=border_color,
+                                            width=border_width, tags="button_border")
+
+            content_x = button_width // 2
+            if image:
+                if text and text.strip():
+                    image_x = content_x - \
+                        (image_width + image_padding +
+                         text_width) // 2 + image_width // 2
+                    text_x = image_x + image_width // 2 + image_padding + text_width // 2
+
+                    canvas.create_image(
+                        image_x, button_height // 2, image=image, tags="button_image")
+                    canvas.create_text(text_x, button_height // 2, text=text, fill=style["fg"],
+                                       font=('Segoe UI', 10, 'bold'), tags="button_text")
+                else:
+                    canvas.create_image(
+                        content_x, button_height // 2, image=image, tags="button_image")
+
+            elif text and text.strip():
+                canvas.create_text(content_x, button_height // 2, text=text, fill=style["fg"],
+                                   font=('Segoe UI', 10, 'bold'), tags="button_text")
+
+        draw_rounded_rect(canvas, 0, 0, button_width, button_height, corner_radius,
+                          style["bg"], style.get("border_color"), style.get("border_width", 0))
+
+        button_state = {"disabled": False}
+
+        def on_enter(e):
+            if not button_state["disabled"]:
+                if button_type == "icon":
+                    draw_rounded_rect(canvas, 0, 0, button_width, button_height,
+                                      corner_radius, colors['border_light'], None, 0)
+                else:
+                    draw_rounded_rect(canvas, 0, 0, button_width, button_height,
+                                      corner_radius, style["hover_bg"],
+                                      style.get("border_color"), style.get("border_width", 0))
+
+        def on_leave(e):
+            if not button_state["disabled"]:
+                if button_type == "icon":
+                    draw_rounded_rect(canvas, 0, 0, button_width, button_height,
+                                      corner_radius, None, None, 0)
+                else:
+                    draw_rounded_rect(canvas, 0, 0, button_width, button_height,
+                                      corner_radius, style["bg"],
+                                      style.get("border_color"), style.get("border_width", 0))
+
+        def on_click(e):
+            if not button_state["disabled"]:
+                if button_type == "icon":
+                    draw_rounded_rect(canvas, 0, 0, button_width, button_height,
+                                      corner_radius, colors['border'], None, 0)
+                    parent.after(100, lambda: draw_rounded_rect(
+                        canvas, 0, 0, button_width, button_height, corner_radius, colors['border_light'], None, 0))
+                else:
+                    draw_rounded_rect(canvas, 0, 0, button_width, button_height,
+                                      corner_radius, style["active_bg"],
+                                      style.get("border_color"), style.get("border_width", 0))
+                    parent.after(100, lambda: draw_rounded_rect(
+                        canvas, 0, 0, button_width, button_height, corner_radius, style["hover_bg"],
+                        style.get("border_color"), style.get("border_width", 0)))
+                if command:
+                    command()
+
+        canvas.bind('<Enter>', on_enter)
+        canvas.bind('<Leave>', on_leave)
+        canvas.bind('<Button-1>', on_click)
+        canvas.pack()
+
+        return container
 
 
 FONTS = {
@@ -767,27 +1040,4 @@ LAYOUT = {
     'tree_height': 8,
     'card_border_radius': 8,
     'button_border_radius': 6
-}
-
-ICONS = {
-    'app': '🎬',
-    'folder': '📁',
-    'file': '📄',
-    'settings': '⚙️',
-    'list': '📋',
-    'status': '📊',
-    'process': '🚀',
-    'exit': '❌',
-    'clear': '🗑️',
-    'browse': '📂',
-    'download': '📥',
-    'drop': '📥',
-    'size': '💾',
-    'series': '📺',
-    'success': '✅',
-    'processing': '🔄',
-    'warning': '⚠️',
-    'error': '❌',
-    'info': '💡',
-    'celebration': '🎉'
 }

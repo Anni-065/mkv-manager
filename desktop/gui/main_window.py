@@ -3,14 +3,19 @@
 Main window for MKV Cleaner Desktop Application
 """
 
+from controllers import MKVCleanerController
+from core.config import (
+    ALLOWED_AUDIO_LANGS, ALLOWED_SUB_LANGS,
+    DEFAULT_AUDIO_LANG, DEFAULT_SUBTITLE_LANG,
+    ORIGINAL_AUDIO_LANG, ORIGINAL_SUBTITLE_LANG
+)
+from core.config.constants import LANG_TITLES
+from styles import ModernStyleManager, ModernColorScheme
+from .mixins import ScrollMixin, DragDropMixin
 from .components import (
     HeaderComponent, LanguageSettingsComponent, FileSelectionComponent,
     OutputOptionsComponent, ProcessSectionComponent
 )
-from .mixins import ScrollMixin, DragDropMixin
-from styles import ModernStyleManager, ModernColorScheme
-from core.config.constants import LANG_TITLES
-from controllers import MKVCleanerController
 import tkinter as tk
 from tkinter import ttk
 from tkinterdnd2 import TkinterDnD
@@ -19,6 +24,11 @@ import sys
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 gui_dir = os.path.dirname(current_dir)
+desktop_dir = os.path.dirname(gui_dir)
+root_dir = os.path.dirname(desktop_dir)
+sys.path.insert(0, root_dir)
+sys.path.insert(0, desktop_dir)
+
 desktop_dir = os.path.dirname(gui_dir)
 sys.path.insert(0, desktop_dir)
 sys.path.insert(0, gui_dir)
@@ -87,20 +97,43 @@ class MKVCleanerGUI(ScrollMixin, DragDropMixin):
 
         self._init_language_vars()
 
-    def _init_language_vars(self):
+    def _init_language_vars(self, controller=None):
         """Initialize language variables with default values for configured languages only"""
 
-        for lang_code in ALLOWED_AUDIO_LANGS:
+        if controller and hasattr(controller, 'language_config'):
+            allowed_audio_langs = controller.language_config.get(
+                'allowed_audio_langs', ALLOWED_AUDIO_LANGS)
+            allowed_sub_langs = controller.language_config.get(
+                'allowed_sub_langs', ALLOWED_SUB_LANGS)
+            print(
+                f"🔄 GUI: Using controller language config: Audio={len(allowed_audio_langs)}, Sub={len(allowed_sub_langs)}")
+        else:
+            allowed_audio_langs = ALLOWED_AUDIO_LANGS
+            allowed_sub_langs = ALLOWED_SUB_LANGS
+            print(
+                f"🔄 GUI: Using default language config: Audio={len(allowed_audio_langs)}, Sub={len(allowed_sub_langs)}")
+
+        old_audio_count = len(self.audio_lang_vars)
+        old_sub_count = len(self.subtitle_lang_vars)
+        self.audio_lang_vars.clear()
+        self.subtitle_lang_vars.clear()
+        print(
+            f"🧹 GUI: Cleared old language vars: Audio={old_audio_count}, Sub={old_sub_count}")
+
+        for lang_code in allowed_audio_langs:
             if lang_code in LANG_TITLES:
                 var = tk.BooleanVar()
                 var.set(True)
                 self.audio_lang_vars[lang_code] = var
 
-        for lang_code in ALLOWED_SUB_LANGS:
+        for lang_code in allowed_sub_langs:
             if lang_code in LANG_TITLES:
                 var = tk.BooleanVar()
                 var.set(True)
                 self.subtitle_lang_vars[lang_code] = var
+
+        print(
+            f"✅ GUI: Created new language vars: Audio={len(self.audio_lang_vars)}, Sub={len(self.subtitle_lang_vars)}")
 
         self.default_audio_var.set(
             f"{DEFAULT_AUDIO_LANG} - {LANG_TITLES.get(DEFAULT_AUDIO_LANG, 'Unknown')}")
@@ -153,7 +186,8 @@ class MKVCleanerGUI(ScrollMixin, DragDropMixin):
     def _create_all_sections(self, parent):
         """Create all GUI sections using components"""
 
-        header_component = HeaderComponent(parent, self.colors, DND_AVAILABLE)
+        header_component = HeaderComponent(
+            parent, self.colors, self.controller, DND_AVAILABLE)
         header_component.create()
 
         language_vars = {

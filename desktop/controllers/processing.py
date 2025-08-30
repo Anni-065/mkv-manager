@@ -6,6 +6,7 @@ Handles file processing operations and threading
 import os
 import threading
 from tkinter import messagebox
+from typing import Any, Optional, Callable, Union
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(
@@ -14,17 +15,26 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 try:
     from core import filter_and_remux
 except ImportError:
-    def filter_and_remux(input_path, output_folder, preferences):
+    def filter_and_remux(file_path: str, output_folder: Optional[str] = None,
+                         preferences: Optional[dict] = None, extract_subtitles: bool = False,
+                         progress_callback: Optional[Callable] = None) -> Any:
+        """Fallback function when core module is not available"""
         raise ImportError("filter_and_remux function not available")
 
+# Import image utilities
+current_dir = os.path.dirname(os.path.abspath(__file__))
+gui_dir = os.path.dirname(os.path.dirname(current_dir))
+sys.path.insert(0, gui_dir)
+
 try:
-    from styles import ICONS
+    from gui.utils import get_icon
+    from tkinter import PhotoImage
 except ImportError:
-    ICONS = {
-        'processing': '⚙️',
-        'success': '✅',
-        'celebration': '🎉'
-    }
+    PhotoImage = None
+
+    def get_icon(icon_type: str) -> Optional[Any]:
+        """Fallback function when image utils are not available"""
+        return None
 
 
 class ProcessingController:
@@ -86,7 +96,7 @@ class ProcessingController:
 
                 for file_info in files:
                     try:
-                        status_text = f"{ICONS['processing']} Processing: {file_info['name']}"
+                        status_text = f"Processing: {file_info['name']}"
                         self.gui.root.after(0, lambda t=status_text: self.gui.progress_label.config(
                             text=t))
 
@@ -109,7 +119,7 @@ class ProcessingController:
                                 0, lambda p=overall_progress: self.gui.progress_bar.config(value=p))
 
                         filter_and_remux(
-                            file_info['path'], output_folder, preferences, progress_callback=update_progress)
+                            file_info['path'], output_folder, preferences)
 
                         processed_count += 1
 
@@ -121,9 +131,9 @@ class ProcessingController:
             self.gui.root.after(
                 0, lambda: self.gui.progress_bar.config(value=100))
             self.gui.root.after(0, lambda: self.gui.progress_label.config(
-                text=f"{ICONS['success']} Completed! Processed {processed_count} files."))
+                text=f"Completed! Processed {processed_count} files."))
 
-            success_msg = f"{ICONS['celebration']} Successfully processed {processed_count} files!"
+            success_msg = f"Successfully processed {processed_count} files!"
             self.gui.root.after(0, lambda: messagebox.showinfo(
                 "Processing Complete", success_msg))
 

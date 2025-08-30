@@ -15,6 +15,8 @@ desktop_dir = os.path.dirname(gui_dir)
 sys.path.insert(0, desktop_dir)
 sys.path.insert(0, gui_dir)
 
+# Import image utilities
+
 
 class FileSelectionComponent:
     """Component for creating the file selection section"""
@@ -26,7 +28,9 @@ class FileSelectionComponent:
 
     def create(self):
         """Create the file selection section"""
-        file_frame = ttk.LabelFrame(self.parent, text="  📁 File Selection  ",
+        frame_text = "  File Selection  "
+
+        file_frame = ttk.LabelFrame(self.parent, text=frame_text,
                                     style='Modern.TLabelframe')
         file_frame.grid(row=2, column=0, sticky='nsew', pady=(0, 20))
         file_frame.grid_columnconfigure(0, weight=1)
@@ -45,23 +49,29 @@ class FileSelectionComponent:
 
         button_frame.grid_columnconfigure(2, weight=1)
 
-        browse_files_btn = UIHelpers.create_button(
-            button_frame, text="📄 Select Files", command=self.controller.browse_files,
-            button_type="primary", colors=self.colors, width=120, height=30
+        # Create buttons with icons using enhanced image button method
+        browse_files_btn = UIHelpers.create_image_button(
+            button_frame, text="Select Files", command=self.controller.browse_files,
+            button_type="primary", colors=self.colors, icon_type="file", is_light=True,
+            width=120, height=30
         )
-        browse_files_btn.grid(row=0, column=0, padx=(0, 10))
+        if browse_files_btn:
+            browse_files_btn.grid(row=0, column=0, padx=(0, 10))
 
-        browse_folder_btn = UIHelpers.create_button(
-            button_frame, text="📁 Select Folder", command=self.controller.browse_folder,
-            button_type="secondary", colors=self.colors, width=120, height=30
+        browse_folder_btn = UIHelpers.create_image_button(
+            button_frame, text="Select Folder", command=self.controller.browse_folder,
+            button_type="secondary", colors=self.colors, icon_type="folder", is_light=False,
+            width=120, height=30
         )
-        browse_folder_btn.grid(row=0, column=1, padx=(0, 10))
+        if browse_folder_btn:
+            browse_folder_btn.grid(row=0, column=1, padx=(0, 10))
 
         clear_btn = UIHelpers.create_button(
             button_frame, text="Clear All", command=self.controller.clear_selection,
             button_type="danger", colors=self.colors, width=80, height=30
         )
-        clear_btn.grid(row=0, column=3, sticky='e')
+        if clear_btn:
+            clear_btn.grid(row=0, column=3, sticky='e')
 
         return button_frame
 
