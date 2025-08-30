@@ -7,6 +7,24 @@ This module contains all color schemes, ttk styles, and UI configuration
 import tkinter as tk
 from tkinter import ttk
 
+# lazy import to avoid circular import errors
+HAS_IMAGES = None
+get_icon = None
+
+
+def _lazy_import_icons():
+    """Lazy import of icon utilities to avoid circular imports"""
+    global HAS_IMAGES, get_icon
+    if HAS_IMAGES is None:
+        try:
+            from gui.utils.image_utils import get_icon as _get_icon
+            HAS_IMAGES = True
+            get_icon = _get_icon
+        except ImportError:
+            HAS_IMAGES = False
+            get_icon = None
+    return HAS_IMAGES, get_icon
+
 
 class ModernColorScheme:
     """Modern color scheme with enhanced contrast and accessibility"""
@@ -742,10 +760,15 @@ class UIHelpers:
         return frame
 
     @staticmethod
-    def create_image_button(parent, text, command, button_type="primary", colors=None, image=None, **kwargs):
+    def create_image_button(parent, text, command, button_type="primary", colors=None, image=None, icon_type=None, is_light=True, **kwargs):
         """Create a button with custom colors and optional image support"""
         if colors is None:
             return None
+
+        if icon_type and not image:
+            has_images, icon_func = _lazy_import_icons()
+            if has_images and icon_func:
+                image = icon_func(icon_type, is_light=is_light)
 
         button_styles = {
             "primary": {
@@ -804,7 +827,6 @@ class UIHelpers:
         canvas = tk.Canvas(container, highlightthickness=0,
                            bg=parent_bg, cursor='hand2')
 
-        # Calculate size including image if present
         temp_label = tk.Label(container, text=text,
                               font=('Segoe UI', 10, 'bold'))
         temp_label.update_idletasks()
@@ -812,12 +834,10 @@ class UIHelpers:
         text_height = temp_label.winfo_reqheight()
         temp_label.destroy()
 
-        # Add space for image if present
         image_width = 16 if image else 0
         image_padding = 5 if image else 0
 
         button_width = text_width + (padx * 2) + image_width + image_padding
-        # Minimum height for icons
         button_height = max(text_height + (pady * 2), 35)
         corner_radius = 8
 
@@ -829,13 +849,11 @@ class UIHelpers:
             canvas.delete("button_text")
             canvas.delete("button_image")
 
-            # For icon buttons without background, only draw the content
             if button_type == "icon":
-                # Position content (image + text) without background
                 content_x = button_width // 2
+
                 if image:
-                    if text and text.strip():  # Only show text if it's not empty
-                        # Position image and text side by side
+                    if text and text.strip():
                         image_x = content_x - \
                             (image_width + image_padding +
                              text_width) // 2 + image_width // 2
@@ -846,24 +864,19 @@ class UIHelpers:
                         canvas.create_text(text_x, button_height // 2, text=text, fill=colors['text'],
                                            font=('Segoe UI', 10, 'bold'), tags="button_text")
                     else:
-                        # Just center the image
                         canvas.create_image(
                             content_x, button_height // 2, image=image, tags="button_image")
                 elif text and text.strip():
-                    # Just center the text
                     canvas.create_text(content_x, button_height // 2, text=text, fill=colors['text'],
                                        font=('Segoe UI', 10, 'bold'), tags="button_text")
                 return
 
-            # For regular buttons, draw background and borders
             if fill_color:
-                # Draw rounded rectangle background
                 canvas.create_rectangle(x1 + radius, y1, x2 - radius, y2,
                                         fill=fill_color, outline="", tags="button_bg")
                 canvas.create_rectangle(x1, y1 + radius, x2, y2 - radius,
                                         fill=fill_color, outline="", tags="button_bg")
 
-                # Draw rounded corners
                 canvas.create_arc(x1, y1, x1 + 2*radius, y1 + 2*radius,
                                   start=90, extent=90, fill=fill_color, outline="", tags="button_bg")
                 canvas.create_arc(x2 - 2*radius, y1, x2, y1 + 2*radius,
@@ -873,11 +886,8 @@ class UIHelpers:
                 canvas.create_arc(x2 - 2*radius, y2 - 2*radius, x2, y2,
                                   start=270, extent=90, fill=fill_color, outline="", tags="button_bg")
 
-            # Draw border if specified
             if border_color and border_width > 0:
-                # For secondary buttons, draw a proper rounded border
                 if button_type == "secondary":
-                    # Draw rounded border rectangles
                     canvas.create_rectangle(x1 + radius, y1, x2 - radius, y1 + border_width,
                                             fill=border_color, outline="", tags="button_border")
                     canvas.create_rectangle(x1 + radius, y2 - border_width, x2 - radius, y2,
@@ -887,41 +897,39 @@ class UIHelpers:
                     canvas.create_rectangle(x2 - border_width, y1 + radius, x2, y2 - radius,
                                             fill=border_color, outline="", tags="button_border")
 
-                    # Draw rounded corner borders
                     corner_size = radius
                     for i in range(corner_size):
                         for j in range(corner_size):
-                            # Top-left corner
                             dx = corner_size - i
                             dy = corner_size - j
                             distance = (dx*dx + dy*dy) ** 0.5
+
                             if corner_size - border_width <= distance <= corner_size:
                                 canvas.create_rectangle(x1 + i, y1 + j, x1 + i + 1, y1 + j + 1,
                                                         fill=border_color, outline="", tags="button_border")
 
                     for i in range(corner_size):
                         for j in range(corner_size):
-                            # Top-right corner
                             dx = i + 1
                             dy = corner_size - j
                             distance = (dx*dx + dy*dy) ** 0.5
+
                             if corner_size - border_width <= distance <= corner_size:
                                 canvas.create_rectangle(x2 - corner_size + i, y1 + j, x2 - corner_size + i + 1, y1 + j + 1,
                                                         fill=border_color, outline="", tags="button_border")
 
                     for i in range(corner_size):
                         for j in range(corner_size):
-                            # Bottom-left corner
                             dx = corner_size - i
                             dy = j + 1
                             distance = (dx*dx + dy*dy) ** 0.5
+
                             if corner_size - border_width <= distance <= corner_size:
                                 canvas.create_rectangle(x1 + i, y2 - corner_size + j, x1 + i + 1, y2 - corner_size + j + 1,
                                                         fill=border_color, outline="", tags="button_border")
 
                     for i in range(corner_size):
                         for j in range(corner_size):
-                            # Bottom-right corner
                             dx = i + 1
                             dy = j + 1
                             distance = (dx*dx + dy*dy) ** 0.5
@@ -930,15 +938,12 @@ class UIHelpers:
                                                         x2 - corner_size + i + 1, y2 - corner_size + j + 1,
                                                         fill=border_color, outline="", tags="button_border")
                 else:
-                    # Simplified border for other button types
                     canvas.create_rectangle(x1, y1, x2, y2, outline=border_color,
                                             width=border_width, tags="button_border")
 
-            # Position content (image + text)
             content_x = button_width // 2
             if image:
-                if text and text.strip():  # Only show text if it's not empty
-                    # Position image and text side by side
+                if text and text.strip():
                     image_x = content_x - \
                         (image_width + image_padding +
                          text_width) // 2 + image_width // 2
@@ -949,15 +954,13 @@ class UIHelpers:
                     canvas.create_text(text_x, button_height // 2, text=text, fill=style["fg"],
                                        font=('Segoe UI', 10, 'bold'), tags="button_text")
                 else:
-                    # Just center the image
                     canvas.create_image(
                         content_x, button_height // 2, image=image, tags="button_image")
+
             elif text and text.strip():
-                # Just center the text
                 canvas.create_text(content_x, button_height // 2, text=text, fill=style["fg"],
                                    font=('Segoe UI', 10, 'bold'), tags="button_text")
 
-        # Initial draw
         draw_rounded_rect(canvas, 0, 0, button_width, button_height, corner_radius,
                           style["bg"], style.get("border_color"), style.get("border_width", 0))
 
@@ -966,7 +969,6 @@ class UIHelpers:
         def on_enter(e):
             if not button_state["disabled"]:
                 if button_type == "icon":
-                    # For icon buttons, add a subtle background on hover
                     draw_rounded_rect(canvas, 0, 0, button_width, button_height,
                                       corner_radius, colors['border_light'], None, 0)
                 else:
@@ -977,7 +979,6 @@ class UIHelpers:
         def on_leave(e):
             if not button_state["disabled"]:
                 if button_type == "icon":
-                    # For icon buttons, remove background on leave
                     draw_rounded_rect(canvas, 0, 0, button_width, button_height,
                                       corner_radius, None, None, 0)
                 else:
@@ -988,7 +989,6 @@ class UIHelpers:
         def on_click(e):
             if not button_state["disabled"]:
                 if button_type == "icon":
-                    # For icon buttons, brief darker background on click
                     draw_rounded_rect(canvas, 0, 0, button_width, button_height,
                                       corner_radius, colors['border'], None, 0)
                     parent.after(100, lambda: draw_rounded_rect(

@@ -3,7 +3,6 @@
 Language settings component for MKV Cleaner Desktop Application
 """
 
-from gui.utils import get_icon
 from styles import UIHelpers
 from core.config import ALLOWED_AUDIO_LANGS, ALLOWED_SUB_LANGS
 from core.config.constants import LANG_TITLES
@@ -81,13 +80,9 @@ class LanguageSettingsComponent:
 
         subtitle_frame = self._create_subtitle_section()
 
-        # Get save icon
-        save_icon = get_icon('save')
-
-        # Use image button for better styling
         save_btn = UIHelpers.create_image_button(
             self.language_settings_inner, text="Save Settings", command=self.controller.save_language_settings,
-            button_type="success", colors=self.colors, image=save_icon,
+            button_type="success", colors=self.colors, icon_type="save",
             width=120, height=35
         )
 

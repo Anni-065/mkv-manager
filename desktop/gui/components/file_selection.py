@@ -3,7 +3,6 @@
 File selection component for MKV Cleaner Desktop Application
 """
 
-from gui.utils import get_icon
 from styles import UIHelpers
 from tkinter import ttk
 import os
@@ -29,8 +28,6 @@ class FileSelectionComponent:
 
     def create(self):
         """Create the file selection section"""
-        # Get folder icon for the frame label
-        folder_icon = get_icon('folder')
         frame_text = "  File Selection  "
 
         file_frame = ttk.LabelFrame(self.parent, text=frame_text,
@@ -52,14 +49,10 @@ class FileSelectionComponent:
 
         button_frame.grid_columnconfigure(2, weight=1)
 
-        # Get icons for buttons
-        file_icon = get_icon('file')
-        folder_icon = get_icon('folder')
-
         # Create buttons with icons using enhanced image button method
         browse_files_btn = UIHelpers.create_image_button(
             button_frame, text="Select Files", command=self.controller.browse_files,
-            button_type="primary", colors=self.colors, image=file_icon,
+            button_type="primary", colors=self.colors, icon_type="file", is_light=True,
             width=120, height=30
         )
         if browse_files_btn:
@@ -67,7 +60,7 @@ class FileSelectionComponent:
 
         browse_folder_btn = UIHelpers.create_image_button(
             button_frame, text="Select Folder", command=self.controller.browse_folder,
-            button_type="secondary", colors=self.colors, image=folder_icon,
+            button_type="secondary", colors=self.colors, icon_type="folder", is_light=False,
             width=120, height=30
         )
         if browse_folder_btn:

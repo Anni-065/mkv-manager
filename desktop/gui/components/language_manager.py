@@ -90,14 +90,10 @@ class LanguageManagerWindow:
 
         ttk.Frame(buttons_frame).pack(side='left', expand=True)
 
-        # Get save icon
-        save_icon = get_icon('save')
-
-        # Use image button for better styling
         save_btn = UIHelpers.create_image_button(
             buttons_frame, text="Save Changes",
             command=self.save_changes,
-            button_type="success", colors=self.colors, image=save_icon,
+            button_type="success", colors=self.colors, icon_type="save",
             width=150, height=35
         )
 
@@ -182,7 +178,6 @@ class LanguageManagerWindow:
         search_frame = ttk.Frame(self.subtitle_frame, style='Modern.TFrame')
         search_frame.pack(fill='x', padx=20, pady=20)
 
-        # Get search icon
         search_icon = get_icon('search')
 
         if search_icon:
