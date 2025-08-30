@@ -4,6 +4,7 @@ Language Manager Window for MKV Cleaner Desktop Application
 Advanced settings for managing available languages
 """
 
+from gui.utils import get_icon
 from styles import UIHelpers
 from core.config.constants import LANG_TITLES
 import tkinter as tk
@@ -19,6 +20,8 @@ root_dir = os.path.dirname(desktop_dir)
 sys.path.insert(0, root_dir)
 sys.path.insert(0, desktop_dir)
 sys.path.insert(0, gui_dir)
+
+# Import image utilities
 
 
 class LanguageManagerWindow:
@@ -56,7 +59,7 @@ class LanguageManagerWindow:
 
         title_label = ttk.Label(
             header_frame,
-            text="🌐 Language Manager",
+            text="Language Manager",
             font=('Segoe UI', 14, 'bold')
         )
         title_label.pack(side='left')
@@ -75,11 +78,11 @@ class LanguageManagerWindow:
         self.notebook.pack(fill='both', expand=True)
 
         self.audio_frame = ttk.Frame(self.notebook, style='Modern.TFrame')
-        self.notebook.add(self.audio_frame, text="🎵 Audio Languages")
+        self.notebook.add(self.audio_frame, text="Audio Languages")
         self.create_audio_tab()
 
         self.subtitle_frame = ttk.Frame(self.notebook, style='Modern.TFrame')
-        self.notebook.add(self.subtitle_frame, text="📝 Subtitle Languages")
+        self.notebook.add(self.subtitle_frame, text="Subtitle Languages")
         self.create_subtitle_tab()
 
         buttons_frame = ttk.Frame(self.window, style='Modern.TFrame')
@@ -87,11 +90,17 @@ class LanguageManagerWindow:
 
         ttk.Frame(buttons_frame).pack(side='left', expand=True)
 
-        save_btn = UIHelpers.create_button(
-            buttons_frame, text="💾 Save Changes",
+        # Get save icon
+        save_icon = get_icon('save')
+
+        # Use image button for better styling
+        save_btn = UIHelpers.create_image_button(
+            buttons_frame, text="Save Changes",
             command=self.save_changes,
-            button_type="success", colors=self.colors, width=150, height=35
+            button_type="success", colors=self.colors, image=save_icon,
+            width=150, height=35
         )
+
         if save_btn:
             save_btn.pack(side='right')
 
@@ -100,8 +109,17 @@ class LanguageManagerWindow:
         search_frame = ttk.Frame(self.audio_frame, style='Modern.TFrame')
         search_frame.pack(fill='x', padx=20, pady=20)
 
-        ttk.Label(search_frame, text="🔍 Search:",
-                  font=('Segoe UI', 10)).pack(side='left')
+        # Get search icon
+        search_icon = get_icon('search')
+
+        if search_icon:
+            search_label = ttk.Label(
+                search_frame, image=search_icon, compound='left', text="Search:")
+        else:
+            search_label = ttk.Label(
+                search_frame, text="Search:", font=('Segoe UI', 10))
+
+        search_label.pack(side='left')
         self.audio_search_var = tk.StringVar()
         self.audio_search_var.trace(
             'w', lambda *args: self.filter_languages('audio'))
@@ -164,8 +182,17 @@ class LanguageManagerWindow:
         search_frame = ttk.Frame(self.subtitle_frame, style='Modern.TFrame')
         search_frame.pack(fill='x', padx=20, pady=20)
 
-        ttk.Label(search_frame, text="🔍 Search:",
-                  font=('Segoe UI', 10)).pack(side='left')
+        # Get search icon
+        search_icon = get_icon('search')
+
+        if search_icon:
+            search_label = ttk.Label(
+                search_frame, image=search_icon, compound='left', text="Search:")
+        else:
+            search_label = ttk.Label(
+                search_frame, text="Search:", font=('Segoe UI', 10))
+
+        search_label.pack(side='left')
         self.subtitle_search_var = tk.StringVar()
         self.subtitle_search_var.trace(
             'w', lambda *args: self.filter_languages('subtitle'))

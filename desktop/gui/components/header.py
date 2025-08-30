@@ -3,8 +3,19 @@
 Header component for MKV Cleaner Desktop Application
 """
 
+from gui.utils import get_icon
 from tkinter import ttk
 from styles import UIHelpers
+import os
+import sys
+
+# Add path for importing utils
+current_dir = os.path.dirname(os.path.abspath(__file__))
+components_dir = os.path.dirname(current_dir)
+gui_dir = os.path.dirname(components_dir)
+sys.path.insert(0, gui_dir)
+
+# Import image utilities
 
 
 class HeaderComponent:
@@ -40,10 +51,16 @@ class HeaderComponent:
             settings_frame = ttk.Frame(header_frame, style='Modern.TFrame')
             settings_frame.grid(row=0, column=1, sticky='ne', padx=(10, 0))
 
-            settings_btn = UIHelpers.create_button(
-                settings_frame, text="⚙️", command=self.controller.open_language_manager,
-                button_type="secondary", colors=self.colors, width=35, height=35
+            # Get settings icon
+            settings_icon = get_icon('settings')
+
+            # Use icon button type for settings button (icon only, no background)
+            settings_btn = UIHelpers.create_image_button(
+                settings_frame, text="", command=self.controller.open_language_manager,
+                button_type="icon", colors=self.colors, image=settings_icon,
+                width=35, height=35
             )
+
             if settings_btn:
                 settings_btn.grid(row=0, column=0)
 

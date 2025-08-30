@@ -3,6 +3,7 @@
 Output options component for MKV Cleaner Desktop Application
 """
 
+from gui.utils import get_icon
 from styles import UIHelpers
 import tkinter as tk
 from tkinter import ttk
@@ -15,6 +16,8 @@ gui_dir = os.path.dirname(components_dir)
 desktop_dir = os.path.dirname(gui_dir)
 sys.path.insert(0, desktop_dir)
 sys.path.insert(0, gui_dir)
+
+# Import image utilities
 
 
 class OutputOptionsComponent:
@@ -29,7 +32,7 @@ class OutputOptionsComponent:
     def create(self):
         """Create the output options section"""
 
-        output_frame = ttk.LabelFrame(self.parent, text="  📂 Output Options  ",
+        output_frame = ttk.LabelFrame(self.parent, text="  Output Options  ",
                                       style='Modern.TLabelframe')
         output_frame.grid(row=3, column=0, sticky='ew', pady=(0, 20))
         output_frame.grid_columnconfigure(0, weight=1)
@@ -38,7 +41,7 @@ class OutputOptionsComponent:
         options_frame.grid(row=0, column=0, sticky='ew', padx=15, pady=15)
 
         same_folder_radio = ttk.Radiobutton(
-            options_frame, text="📁 Same folder (in 'processed' subfolder)",
+            options_frame, text="Same folder (in 'processed' subfolder)",
             variable=self.output_vars['output_option'], value="same_folder",
             style='Modern.TRadiobutton'
         )
@@ -46,7 +49,7 @@ class OutputOptionsComponent:
             row=0, column=0, sticky='w', pady=5, padx=(20, 0))
 
         downloads_radio = ttk.Radiobutton(
-            options_frame, text="📥 Downloads folder (in 'MKV cleaner' subfolder)",
+            options_frame, text="Downloads folder (in 'MKV cleaner' subfolder)",
             variable=self.output_vars['output_option'], value="downloads",
             style='Modern.TRadiobutton'
         )

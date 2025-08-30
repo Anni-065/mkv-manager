@@ -3,6 +3,7 @@
 Language settings component for MKV Cleaner Desktop Application
 """
 
+from gui.utils import get_icon
 from styles import UIHelpers
 from core.config import ALLOWED_AUDIO_LANGS, ALLOWED_SUB_LANGS
 from core.config.constants import LANG_TITLES
@@ -19,6 +20,8 @@ root_dir = os.path.dirname(desktop_dir)
 sys.path.insert(0, root_dir)
 sys.path.insert(0, desktop_dir)
 sys.path.insert(0, gui_dir)
+
+# Import image utilities
 
 
 class LanguageSettingsComponent:
@@ -38,7 +41,7 @@ class LanguageSettingsComponent:
         lang_container.grid(row=1, column=0, sticky='ew', pady=(0, 20))
         lang_container.grid_columnconfigure(0, weight=1)
 
-        self.language_settings_header = ttk.LabelFrame(lang_container, text="  🌐 Language Settings     ▶   ",
+        self.language_settings_header = ttk.LabelFrame(lang_container, text="  Language Settings     ▶   ",
                                                        style='Modern.TLabelframe')
         self.language_settings_header.grid(row=0, column=0, sticky='ew')
         self.language_settings_header.grid_columnconfigure(0, weight=1)
@@ -78,10 +81,16 @@ class LanguageSettingsComponent:
 
         subtitle_frame = self._create_subtitle_section()
 
-        save_btn = UIHelpers.create_button(
-            self.language_settings_inner, text="💾 Save Settings", command=self.controller.save_language_settings,
-            button_type="success", colors=self.colors, width=120, height=35
+        # Get save icon
+        save_icon = get_icon('save')
+
+        # Use image button for better styling
+        save_btn = UIHelpers.create_image_button(
+            self.language_settings_inner, text="Save Settings", command=self.controller.save_language_settings,
+            button_type="success", colors=self.colors, image=save_icon,
+            width=120, height=35
         )
+
         if save_btn:
             save_btn.grid(row=1, column=0, columnspan=2,
                           pady=(10, 5), sticky='ew')
@@ -294,10 +303,10 @@ class LanguageSettingsComponent:
             if self.language_settings_expanded.get():
                 self.language_settings_header.grid_remove()
                 self.language_settings_content.config(
-                    text="  🌐 Language Settings     ▼   ")
+                    text="  Language Settings     ▼   ")
                 self.language_settings_content.grid()
             else:
                 self.language_settings_content.grid_remove()
                 self.language_settings_header.config(
-                    text="  🌐 Language Settings     ▶   ")
+                    text="  Language Settings     ▶   ")
                 self.language_settings_header.grid()
