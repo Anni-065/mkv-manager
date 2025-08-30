@@ -4,10 +4,25 @@ Scrolling functionality mixin for GUI components
 """
 
 import tkinter as tk
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Union
 
 
 class ScrollMixin:
-    """Mixin providing scrolling functionality"""
+    """Mixin providing scrolling functionality
+
+    This mixin expects the following attributes to be available:
+    - canvas: tk.Canvas - The canvas widget for scrolling
+    - root: tk.Tk - The root window widget
+    - canvas_window: int - The canvas window ID created with create_window()
+    """
+
+    # Type annotations for expected attributes (will be provided by mixing class)
+    canvas: tk.Canvas
+    root: tk.Tk
+    canvas_window: int
 
     def bind_mousewheel(self):
         """Bind mouse wheel to scrolling"""

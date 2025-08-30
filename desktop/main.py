@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Startup script for the refactored MKV Cleaner GUI
+Startup script for the MKV Cleaner GUI
 """
 
 from gui import MKVCleanerGUI
