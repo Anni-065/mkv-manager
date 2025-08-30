@@ -49,19 +49,22 @@ class FileSelectionComponent:
             button_frame, text="📄 Select Files", command=self.controller.browse_files,
             button_type="primary", colors=self.colors, width=120, height=30
         )
-        browse_files_btn.grid(row=0, column=0, padx=(0, 10))
+        if browse_files_btn:
+            browse_files_btn.grid(row=0, column=0, padx=(0, 10))
 
         browse_folder_btn = UIHelpers.create_button(
             button_frame, text="📁 Select Folder", command=self.controller.browse_folder,
             button_type="secondary", colors=self.colors, width=120, height=30
         )
-        browse_folder_btn.grid(row=0, column=1, padx=(0, 10))
+        if browse_folder_btn:
+            browse_folder_btn.grid(row=0, column=1, padx=(0, 10))
 
         clear_btn = UIHelpers.create_button(
             button_frame, text="Clear All", command=self.controller.clear_selection,
             button_type="danger", colors=self.colors, width=80, height=30
         )
-        clear_btn.grid(row=0, column=3, sticky='e')
+        if clear_btn:
+            clear_btn.grid(row=0, column=3, sticky='e')
 
         return button_frame
 

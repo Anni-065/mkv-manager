@@ -4,18 +4,19 @@ Language settings component for MKV Cleaner Desktop Application
 """
 
 from styles import UIHelpers
+from core.config import ALLOWED_AUDIO_LANGS, ALLOWED_SUB_LANGS
+from core.config.constants import LANG_TITLES
 import tkinter as tk
 from tkinter import ttk
 import os
 import sys
 
-from core.config import ALLOWED_AUDIO_LANGS, ALLOWED_SUB_LANGS
-from core.config.constants import LANG_TITLES
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 components_dir = os.path.dirname(current_dir)
 gui_dir = os.path.dirname(components_dir)
 desktop_dir = os.path.dirname(gui_dir)
+root_dir = os.path.dirname(desktop_dir)
+sys.path.insert(0, root_dir)
 sys.path.insert(0, desktop_dir)
 sys.path.insert(0, gui_dir)
 
@@ -81,7 +82,9 @@ class LanguageSettingsComponent:
             self.language_settings_inner, text="💾 Save Settings", command=self.controller.save_language_settings,
             button_type="success", colors=self.colors, width=120, height=35
         )
-        save_btn.grid(row=1, column=0, columnspan=2, pady=(10, 15))
+        if save_btn:
+            save_btn.grid(row=1, column=0, columnspan=2,
+                          pady=(10, 5), sticky='ew')
 
     def _create_audio_section(self):
         """Create the audio language section"""
@@ -90,6 +93,8 @@ class LanguageSettingsComponent:
             self.language_settings_inner, style='Modern.TFrame')
         audio_frame.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
 
+        audio_frame.grid_columnconfigure(0, weight=1)
+
         audio_label = ttk.Label(audio_frame, text="🎵 Audio Languages",
                                 style='SectionHeader.TLabel')
         audio_label.grid(row=0, column=0, sticky='w', pady=(0, 10))
@@ -97,10 +102,18 @@ class LanguageSettingsComponent:
         audio_check_frame = ttk.Frame(audio_frame, style='Modern.TFrame')
         audio_check_frame.grid(row=1, column=0, sticky='ew', pady=(0, 10))
 
+        audio_check_frame.grid_columnconfigure(0, weight=1)
+        audio_check_frame.grid_columnconfigure(1, weight=1)
+        audio_check_frame.grid_columnconfigure(2, weight=1)
+
         row = 0
         col = 0
+        max_cols = 3
 
-        for lang_code in ALLOWED_AUDIO_LANGS:
+        allowed_audio_langs = getattr(self.controller, 'language_config', {}).get(
+            'allowed_audio_langs', ALLOWED_AUDIO_LANGS)
+
+        for lang_code in allowed_audio_langs:
             if lang_code in self.vars['audio_lang_vars'] and lang_code in LANG_TITLES:
                 lang_name = LANG_TITLES[lang_code]
                 checkbox = ttk.Checkbutton(
@@ -113,7 +126,7 @@ class LanguageSettingsComponent:
                 checkbox.grid(row=row, column=col, sticky='w',
                               padx=(0, 20), pady=2)
                 col += 1
-                if col > 2:
+                if col >= max_cols:
                     col = 0
                     row += 1
 
@@ -124,6 +137,9 @@ class LanguageSettingsComponent:
     def _create_audio_combos(self, audio_frame):
         """Create audio comboboxes"""
 
+        allowed_audio_langs = getattr(self.controller, 'language_config', {}).get(
+            'allowed_audio_langs', ALLOWED_AUDIO_LANGS)
+
         default_audio_label = ttk.Label(audio_frame, text="Default Audio:",
                                         style='Modern.TLabel')
         default_audio_label.grid(row=2, column=0, sticky='w', pady=(10, 5))
@@ -131,7 +147,7 @@ class LanguageSettingsComponent:
         default_audio_combo = ttk.Combobox(
             audio_frame, textvariable=self.vars['default_audio_var'],
             values=[
-                f"{code} - {LANG_TITLES[code]}" for code in ALLOWED_AUDIO_LANGS if code in LANG_TITLES],
+                f"{code} - {LANG_TITLES[code]}" for code in allowed_audio_langs if code in LANG_TITLES],
             state='readonly', style='Modern.TCombobox'
         )
         default_audio_combo.grid(row=3, column=0, sticky='ew', pady=(0, 10))
@@ -145,7 +161,7 @@ class LanguageSettingsComponent:
         original_audio_combo = ttk.Combobox(
             audio_frame, textvariable=self.vars['original_audio_var'],
             values=[
-                f"{code} - {LANG_TITLES[code]}" for code in ALLOWED_AUDIO_LANGS if code in LANG_TITLES],
+                f"{code} - {LANG_TITLES[code]}" for code in allowed_audio_langs if code in LANG_TITLES],
             state='readonly', style='Modern.TCombobox'
         )
         original_audio_combo.grid(row=5, column=0, sticky='ew')
@@ -159,6 +175,8 @@ class LanguageSettingsComponent:
             self.language_settings_inner, style='Modern.TFrame')
         subtitle_frame.grid(row=0, column=1, sticky='nsew', padx=10, pady=10)
 
+        subtitle_frame.grid_columnconfigure(0, weight=1)
+
         subtitle_label = ttk.Label(subtitle_frame, text="📝 Subtitle Languages",
                                    style='SectionHeader.TLabel')
         subtitle_label.grid(row=0, column=0, sticky='w', pady=(0, 10))
@@ -166,10 +184,18 @@ class LanguageSettingsComponent:
         subtitle_check_frame = ttk.Frame(subtitle_frame, style='Modern.TFrame')
         subtitle_check_frame.grid(row=1, column=0, sticky='ew', pady=(0, 10))
 
+        subtitle_check_frame.grid_columnconfigure(0, weight=1)
+        subtitle_check_frame.grid_columnconfigure(1, weight=1)
+        subtitle_check_frame.grid_columnconfigure(2, weight=1)
+
         row = 0
         col = 0
+        max_cols = 3
 
-        for lang_code in ALLOWED_SUB_LANGS:
+        allowed_sub_langs = getattr(self.controller, 'language_config', {}).get(
+            'allowed_sub_langs', ALLOWED_SUB_LANGS)
+
+        for lang_code in allowed_sub_langs:
             if lang_code in self.vars['subtitle_lang_vars'] and lang_code in LANG_TITLES:
                 lang_name = LANG_TITLES[lang_code]
                 checkbox = ttk.Checkbutton(
@@ -182,7 +208,7 @@ class LanguageSettingsComponent:
                 checkbox.grid(row=row, column=col, sticky='w',
                               padx=(0, 20), pady=2)
                 col += 1
-                if col > 2:
+                if col >= max_cols:
                     col = 0
                     row += 1
 
@@ -194,6 +220,11 @@ class LanguageSettingsComponent:
     def _create_subtitle_combos(self, subtitle_frame):
         """Create subtitle comboboxes"""
 
+        allowed_sub_langs = getattr(self.controller, 'language_config', {}).get(
+            'allowed_sub_langs', ALLOWED_SUB_LANGS)
+        allowed_audio_langs = getattr(self.controller, 'language_config', {}).get(
+            'allowed_audio_langs', ALLOWED_AUDIO_LANGS)
+
         default_subtitle_label = ttk.Label(subtitle_frame, text="Default Subtitle:",
                                            style='Modern.TLabel')
         default_subtitle_label.grid(row=2, column=0, sticky='w', pady=(10, 5))
@@ -201,7 +232,7 @@ class LanguageSettingsComponent:
         default_subtitle_combo = ttk.Combobox(
             subtitle_frame, textvariable=self.vars['default_subtitle_var'],
             values=[
-                f"{code} - {LANG_TITLES[code]}" for code in ALLOWED_SUB_LANGS if code in LANG_TITLES],
+                f"{code} - {LANG_TITLES[code]}" for code in allowed_sub_langs if code in LANG_TITLES],
             state='readonly', style='Modern.TCombobox'
         )
         default_subtitle_combo.grid(row=3, column=0, sticky='ew', pady=(0, 10))
@@ -213,7 +244,7 @@ class LanguageSettingsComponent:
         original_subtitle_label.grid(row=4, column=0, sticky='w', pady=(0, 5))
 
         all_configured_langs = list(
-            ALLOWED_AUDIO_LANGS.union(ALLOWED_SUB_LANGS))
+            allowed_audio_langs.union(allowed_sub_langs))
         original_subtitle_combo = ttk.Combobox(
             subtitle_frame, textvariable=self.vars['original_subtitle_var'],
             values=[
