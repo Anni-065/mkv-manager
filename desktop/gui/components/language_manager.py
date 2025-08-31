@@ -40,10 +40,11 @@ class LanguageManagerWindow:
         self.window.geometry("800x600")
         self.window.configure(bg=colors['bg'])
         self.window.transient(parent)
-        self.window.grab_set()
 
         self.center_window()
         self.create_interface()
+        
+        self.window.after(1, self.window.grab_set)
 
     def center_window(self):
         """Center the window on the parent"""
