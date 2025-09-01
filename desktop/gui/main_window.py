@@ -12,15 +12,20 @@ from core.config import (
 from core.config.constants import LANG_TITLES
 from styles import ModernStyleManager, ModernColorScheme
 from .mixins import ScrollMixin, DragDropMixin
-from .components import (
+from .main import (
     HeaderComponent, LanguageSettingsComponent, FileSelectionComponent,
     OutputOptionsComponent, ProcessSectionComponent
 )
 import tkinter as tk
 from tkinter import ttk
-from tkinterdnd2 import TkinterDnD
 import os
 import sys
+
+try:
+    from tkinterdnd2 import TkinterDnD
+    DND_AVAILABLE = True
+except ImportError:
+    DND_AVAILABLE = False
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 gui_dir = os.path.dirname(current_dir)
@@ -32,12 +37,6 @@ sys.path.insert(0, desktop_dir)
 desktop_dir = os.path.dirname(gui_dir)
 sys.path.insert(0, desktop_dir)
 sys.path.insert(0, gui_dir)
-
-
-try:
-    DND_AVAILABLE = True
-except ImportError:
-    DND_AVAILABLE = False
 
 try:
     from core.config import *
@@ -157,7 +156,7 @@ class MKVCleanerGUI(ScrollMixin, DragDropMixin):
         main_frame.grid_rowconfigure(2, weight=1)
         main_frame.grid_columnconfigure(0, weight=1)
 
-        self.bind_mousewheel()
+        self.bind_mousewheel(self.canvas)
 
     def _setup_scrollable_canvas(self):
         """Setup the scrollable canvas and frame"""
@@ -182,6 +181,11 @@ class MKVCleanerGUI(ScrollMixin, DragDropMixin):
 
         self.canvas.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
+
+        self.canvas.focus_set()
+        self.bind_mousewheel(self.canvas)
+        
+        self.root.after(100, lambda: self.bind_mousewheel(self.scrollable_frame, self.canvas))
 
     def _create_all_sections(self, parent):
         """Create all GUI sections using components"""

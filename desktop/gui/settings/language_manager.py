@@ -7,6 +7,7 @@ Advanced settings for managing available languages
 from gui.utils import get_icon
 from styles import UIHelpers
 from core.config.constants import LANG_TITLES
+from gui.mixins.scroll_mixin import ScrollMixin
 import tkinter as tk
 from tkinter import ttk, messagebox
 import os
@@ -24,7 +25,7 @@ sys.path.insert(0, gui_dir)
 # Import image utilities
 
 
-class LanguageManagerWindow:
+class LanguageManagerWindow(ScrollMixin):
     """Advanced language settings manager window"""
 
     def __init__(self, parent, colors, current_audio_langs, current_sub_langs, callback):
@@ -132,6 +133,7 @@ class LanguageManagerWindow:
             command=lambda: self.select_all_languages('audio'),
             button_type="primary", colors=self.colors, width=80, height=25
         )
+
         if select_all_btn:
             select_all_btn.pack(side='left', padx=(0, 10))
 
@@ -140,6 +142,7 @@ class LanguageManagerWindow:
             command=lambda: self.clear_all_languages('audio'),
             button_type="secondary", colors=self.colors, width=80, height=25
         )
+
         if clear_all_btn:
             clear_all_btn.pack(side='left')
 
@@ -147,6 +150,7 @@ class LanguageManagerWindow:
             self.audio_frame, style='Modern.TFrame')
         languages_container.pack(
             fill='both', expand=True, padx=20, pady=(0, 20))
+
 
         canvas = tk.Canvas(languages_container,
                            bg=self.colors['bg'], highlightthickness=0)
@@ -159,16 +163,19 @@ class LanguageManagerWindow:
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
 
-        canvas.create_window(
+        self.audio_canvas = canvas
+        self.root = self.window
+        self.audio_canvas_window = canvas.create_window(
             (0, 0), window=self.audio_scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        canvas.bind("<MouseWheel>", _on_mousewheel)
+        self.bind_mousewheel(self.audio_canvas)
+        
+        # For Linux, also bind to the scrollable frame after content is added
+        self.window.after(100, lambda: self.bind_mousewheel(self.audio_scrollable_frame, self.audio_canvas))
 
         self.audio_vars = {}
         self.audio_checkboxes = {}
@@ -212,6 +219,7 @@ class LanguageManagerWindow:
             command=lambda: self.clear_all_languages('subtitle'),
             button_type="secondary", colors=self.colors, width=80, height=25
         )
+
         if clear_all_btn:
             clear_all_btn.pack(side='left')
 
@@ -220,28 +228,31 @@ class LanguageManagerWindow:
         languages_container.pack(
             fill='both', expand=True, padx=20, pady=(0, 20))
 
+
         canvas = tk.Canvas(languages_container,
                            bg=self.colors['bg'], highlightthickness=0)
         scrollbar = ttk.Scrollbar(
             languages_container, orient="vertical", command=canvas.yview)
-        self.subtitle_scrollable_frame = ttk.Frame(
-            canvas, style='Modern.TFrame')
+        self.subtitle_scrollable_frame = ttk.Frame(canvas, style='Modern.TFrame')
 
         self.subtitle_scrollable_frame.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
 
-        canvas.create_window(
+        self.subtitle_canvas = canvas
+        self.root = self.window
+        self.subtitle_canvas_window = canvas.create_window(
             (0, 0), window=self.subtitle_scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        canvas.bind("<MouseWheel>", _on_mousewheel)
+        self.bind_mousewheel(self.subtitle_canvas)
+        
+        # For Linux, also bind to the scrollable frame after content is added
+        self.window.after(100, lambda: self.bind_mousewheel(self.subtitle_scrollable_frame, self.subtitle_canvas))
 
         self.subtitle_vars = {}
         self.subtitle_checkboxes = {}

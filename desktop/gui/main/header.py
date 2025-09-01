@@ -14,9 +14,6 @@ components_dir = os.path.dirname(current_dir)
 gui_dir = os.path.dirname(components_dir)
 sys.path.insert(0, gui_dir)
 
-# Import image utilities
-
-
 class HeaderComponent:
     """Component for creating the header section"""
 
