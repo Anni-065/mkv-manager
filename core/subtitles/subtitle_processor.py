@@ -13,13 +13,7 @@ from .subtitle_converter import (
 )
 from ..utils.text_utils import process_srt_file_line_breaks
 from ..utils.subprocess_utils import run_hidden
-
-try:
-    from ..config.config import MKVMERGE_PATH
-except ImportError:
-    from ..config.config_example import MKVMERGE_PATH
-
-import subprocess
+from ..config import MKVMERGE_PATH
 
 
 def deduplicate_subtitles(subtitle_tracks):
@@ -146,20 +140,20 @@ def process_subtitles_systematically(file_path, output_folder, collected_subtitl
                 if lang in allowed_sub_langs:
                     reason.append("allowed subtitle languages")
                 print(
-                    f"✅ Keeping forced subtitle track {sub['id']} [{lang}] (in {' and '.join(reason)})")
+                    f"Keeping forced subtitle track {sub['id']} [{lang}] (in {' and '.join(reason)})")
             else:
                 print(
-                    f"🗑️ Removing forced subtitle track {sub['id']} [{lang}] (not in allowed audio or subtitle languages)")
+                    f"Removing forced subtitle track {sub['id']} [{lang}] (not in allowed audio or subtitle languages)")
         else:
             if lang in allowed_sub_langs:
                 allowed_subtitles.append(sub)
                 print(
-                    f"✅ Keeping non-forced subtitle track {sub['id']} [{lang}] (in allowed subtitle languages)")
+                    f"Keeping non-forced subtitle track {sub['id']} [{lang}] (in allowed subtitle languages)")
             else:
                 print(
-                    f"🗑️ Removing non-forced subtitle track {sub['id']} [{lang}] (not in allowed subtitle languages)")
+                    f"Removing non-forced subtitle track {sub['id']} [{lang}] (not in allowed subtitle languages)")
 
-    print(f"✅ Kept {len(allowed_subtitles)} subtitle tracks after filtering")
+    print(f"Kept {len(allowed_subtitles)} subtitle tracks after filtering")
 
     conversion_results = []
 
@@ -180,7 +174,7 @@ def process_subtitles_systematically(file_path, output_folder, collected_subtitl
         }
 
         if extract_subtitles:
-            print(f"🔄 Processing subtitle track {tid} [{lang}]...")
+            print(f"Processing subtitle track {tid} [{lang}]...")
 
             suffix = ""
             if forced:
@@ -221,7 +215,7 @@ def process_subtitles_systematically(file_path, output_folder, collected_subtitl
                         process_srt_file_line_breaks(final_srt)
 
                         print(
-                            f"✅ Already SRT format: {os.path.basename(final_srt)}")
+                            f"Already SRT format: {os.path.basename(final_srt)}")
                     else:
                         conversion_success, conversion_msg = convert_subtitle_to_srt(
                             temp_extracted, final_srt)
@@ -239,10 +233,10 @@ def process_subtitles_systematically(file_path, output_folder, collected_subtitl
                             process_srt_file_line_breaks(final_srt)
 
                             print(
-                                f"✅ Converted to SRT: {os.path.basename(final_srt)} ({conversion_msg})")
+                                f"Converted to SRT: {os.path.basename(final_srt)} ({conversion_msg})")
                         else:
                             print(
-                                f"⚠️ Could not convert to SRT: {conversion_msg}")
+                                f"ERR: Could not convert to SRT: {conversion_msg}")
                             result["conversion_success"] = False
 
                         try:
@@ -250,11 +244,11 @@ def process_subtitles_systematically(file_path, output_folder, collected_subtitl
                         except OSError:
                             pass
                 else:
-                    print(f"⚠️ Failed to extract subtitle track {tid}")
+                    print(f"ERR: Failed to extract subtitle track {tid}")
                     result["conversion_success"] = False
 
             except Exception as e:
-                print(f"⚠️ Error processing subtitle track {tid}: {str(e)}")
+                print(f"ERR: Error processing subtitle track {tid}: {str(e)}")
                 result["conversion_success"] = False
         else:
             result["conversion_success"] = True
@@ -327,11 +321,11 @@ def process_subtitles_systematically(file_path, output_folder, collected_subtitl
         if result["file_path"]:
             processed_subtitles.append((result["file_path"], metadata))
             print(
-                f"📝 Added subtitle: {track_title} -> {os.path.basename(result['file_path'])}")
+                f"Added subtitle: {track_title} -> {os.path.basename(result['file_path'])}")
         else:
             original_track_id = result["original_id"]
             print(
-                f"📝 Keeping original subtitle track {original_track_id} [{track_title}]")
+                f"Keeping original subtitle track {original_track_id} [{track_title}]")
 
     original_subtitle_track_ids = []
     original_track_metadata = {}

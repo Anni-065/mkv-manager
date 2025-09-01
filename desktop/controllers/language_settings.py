@@ -5,12 +5,9 @@ Handles language configuration and settings management
 
 from tkinter import messagebox
 
-try:
-    from styles import ICONS
-except ImportError:
-    ICONS = {
-        'success': '✅'
-    }
+ICONS = {
+    'success': '✅'
+}
 
 
 class LanguageSettingsController:
@@ -56,3 +53,43 @@ class LanguageSettingsController:
         except Exception as e:
             messagebox.showerror(
                 "Error", f"Failed to save language settings: {str(e)}")
+
+    def update_available_languages(self):
+        """Update available language options in the GUI after settings change"""
+        try:
+            if hasattr(self.gui, '_init_language_vars'):
+                main_controller = getattr(self.gui, 'controller', None)
+                self.gui._init_language_vars(main_controller)
+            if hasattr(self.gui, 'update_config_display'):
+                self.gui.update_config_display()
+                
+            if hasattr(self.gui, 'language_component') and self.gui.language_component:
+                self._refresh_language_component()
+                
+        except Exception as e:
+            print(f"Warning: Could not update GUI language options: {e}")
+            
+    def _refresh_language_component(self):
+        """Refresh the language component with updated variables"""
+        try:
+            language_vars = {
+                'audio_lang_vars': self.gui.audio_lang_vars,
+                'subtitle_lang_vars': self.gui.subtitle_lang_vars,
+                'default_audio_var': self.gui.default_audio_var,
+                'default_subtitle_var': self.gui.default_subtitle_var,
+                'original_audio_var': self.gui.original_audio_var,
+                'original_subtitle_var': self.gui.original_subtitle_var,
+                'extract_subtitles': self.gui.extract_subtitles,
+                'save_extracted_subtitles': self.gui.save_extracted_subtitles
+            }
+            
+            if hasattr(self.gui.language_component, 'vars'):
+                self.gui.language_component.vars = language_vars
+                
+            if hasattr(self.gui.language_component, 'language_settings_inner'):
+                for child in self.gui.language_component.language_settings_inner.winfo_children():
+                    child.destroy()
+                self.gui.language_component._create_language_content()
+                            
+        except Exception as e:
+            print(f"Warning: Could not refresh language component: {e}")

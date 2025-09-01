@@ -9,9 +9,9 @@ import json
 from ..utils.subprocess_utils import run_hidden
 
 try:
-    from ..config.config import MKVMERGE_PATH
+    from ..config.user_config import MKVMERGE_PATH
 except ImportError:
-    from ..config.config_example import MKVMERGE_PATH
+    from ..config import MKVMERGE_PATH
 
 
 def is_forced_subtitle_by_name(track_name):

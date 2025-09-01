@@ -18,9 +18,39 @@ from ..config.constants import LANG_TITLES
 from ..utils.subprocess_utils import run_hidden
 
 try:
-    from ..config.config import *
+    from ..config.user_config import get_user_config_manager
+    # Get default config values
+    _user_config = get_user_config_manager()
+    _settings = _user_config.get_all_settings()
+    _lang_settings = _settings.get('language_settings', {})
+    
+    ALLOWED_AUDIO_LANGS = set(_lang_settings.get('allowed_audio_langs', ['eng', 'ger', 'jpn', 'kor']))
+    ALLOWED_SUB_LANGS = set(_lang_settings.get('allowed_sub_langs', ['eng', 'ger', 'kor', 'gre']))
+    DEFAULT_AUDIO_LANG = _lang_settings.get('default_audio_lang', 'eng')
+    DEFAULT_SUBTITLE_LANG = _lang_settings.get('default_subtitle_lang', 'eng')
+    ORIGINAL_AUDIO_LANG = _lang_settings.get('original_audio_lang', 'eng')
+    ORIGINAL_SUBTITLE_LANG = _lang_settings.get('original_subtitle_lang', 'eng')
+    
+    _subtitle_settings = _settings.get('subtitle_settings', {})
+    EXTRACT_SUBTITLES = _subtitle_settings.get('extract_subtitles', False)
+    SAVE_EXTRACTED_SUBTITLES = _subtitle_settings.get('save_extracted_subtitles', False)
+    
+    _paths = _settings.get('paths', {})
+    OUTPUT_FOLDER = _paths.get('output_folder', '/tmp')
+    MKVMERGE_PATH = _paths.get('mkvmerge_path', 'mkvmerge')
+    
 except ImportError:
-    from ..config.config_example import *
+    # Fallback to hardcoded defaults
+    ALLOWED_AUDIO_LANGS = {'eng', 'ger', 'jpn', 'kor'}
+    ALLOWED_SUB_LANGS = {'eng', 'ger', 'kor', 'gre'}
+    DEFAULT_AUDIO_LANG = 'eng'
+    DEFAULT_SUBTITLE_LANG = 'eng'
+    ORIGINAL_AUDIO_LANG = 'eng'
+    ORIGINAL_SUBTITLE_LANG = 'eng'
+    EXTRACT_SUBTITLES = False
+    SAVE_EXTRACTED_SUBTITLES = False
+    OUTPUT_FOLDER = '/tmp'
+    MKVMERGE_PATH = 'mkvmerge'
 
 
 def log_entry(file_name, changes, log_file=None):
@@ -47,7 +77,6 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
     """
     source_dir = os.path.dirname(file_path)
 
-    # Load preferences or use defaults
     if preferences:
         allowed_audio_langs = set(preferences.get(
             'ALLOWED_AUDIO_LANGS', ALLOWED_AUDIO_LANGS))
@@ -88,7 +117,7 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
             output_folder = OUTPUT_FOLDER
             os.makedirs(output_folder, exist_ok=True)
             print(
-                f"⚠️ Could not use specified output folder, using default: {output_folder}")
+                f"INFO: Could not use specified output folder, using default: {output_folder}")
             print(f"   Reason: {str(e)}")
 
     else:
@@ -107,7 +136,7 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
             os.makedirs(output_folder, exist_ok=True)
 
             print(
-                f"⚠️ Could not create output folder in {source_dir}, using default: {output_folder}")
+                f"INFO: Could not create output folder in {source_dir}, using default: {output_folder}")
             print(f"   Reason: {str(e)}")
 
     base_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -180,8 +209,6 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
                 if is_original:
                     change_log.append(f"Set audio {tid} [{title}] as original")
             else:
-                print(
-                    f"DEBUG: Removing audio track {tid} [{title}] because '{lang}' not in {allowed_audio_langs}")
                 change_log.append(f"Removed audio track {tid} [{title}]")
 
         elif ttype == "subtitles":
@@ -301,19 +328,16 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
                     output_dir, final_subtitle_name)
 
                 shutil.copy2(saved_file, final_subtitle_path)
-                print(f"💾 Saved subtitle file: {final_subtitle_name}")
 
                 os.remove(saved_file)
 
             except Exception as e:
                 print(
-                    f"⚠️ Error saving subtitle file {os.path.basename(saved_file)}: {str(e)}")
+                    f"ERR: Error saving subtitle file {os.path.basename(saved_file)}: {str(e)}")
 
     for temp_file in temp_subtitle_files:
         try:
             os.remove(temp_file)
-            print(
-                f"🧹 Cleaned up temporary file: {os.path.basename(temp_file)}")
         except OSError:
             pass
 

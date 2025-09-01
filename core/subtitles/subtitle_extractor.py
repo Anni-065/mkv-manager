@@ -3,11 +3,7 @@ import os
 from core.analysis.track_analyzer import is_forced_subtitle_by_name
 from core.subtitles.subtitle_converter import convert_subtitle_to_srt, is_srt_format
 from core.utils.subprocess_utils import run_hidden
-
-try:
-    from ..config.config import MKVMERGE_PATH
-except ImportError:
-    from ..config.config_example import MKVMERGE_PATH
+from ..config import MKVMERGE_PATH
 
 
 def extract_and_convert_subtitles(file_path, output_folder, subtitle_tracks):
@@ -15,7 +11,7 @@ def extract_and_convert_subtitles(file_path, output_folder, subtitle_tracks):
     mkvextract_path = MKVMERGE_PATH.replace("mkvmerge", "mkvextract")
 
     if not os.path.exists(mkvextract_path):
-        print(f"⚠️ mkvextract not found at {mkvextract_path}")
+        print(f"INFO: mkvextract not found at {mkvextract_path}")
         return []
 
     base_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -53,7 +49,7 @@ def extract_and_convert_subtitles(file_path, output_folder, subtitle_tracks):
                     os.rename(temp_subtitle_file, final_srt_file)
                     converted_subtitles.append(final_srt_file)
 
-                    print(f"✅ Extracted SRT subtitle: {final_srt_file}")
+                    print(f"Extracted SRT subtitle: {final_srt_file}")
                 else:
                     success, message = convert_subtitle_to_srt(
                         temp_subtitle_file, final_srt_file)
@@ -61,10 +57,10 @@ def extract_and_convert_subtitles(file_path, output_folder, subtitle_tracks):
                     if success:
                         converted_subtitles.append(final_srt_file)
                         print(
-                            f"✅ Converted subtitle to SRT: {final_srt_file} ({message})")
+                            f"Converted subtitle to SRT: {final_srt_file} ({message})")
                     else:
                         print(
-                            f"⚠️ Could not convert subtitle {temp_subtitle_file} to SRT: {message}")
+                            f"ERR: Could not convert subtitle {temp_subtitle_file} to SRT: {message}")
 
                     try:
                         os.remove(temp_subtitle_file)
@@ -72,10 +68,10 @@ def extract_and_convert_subtitles(file_path, output_folder, subtitle_tracks):
                         pass
             else:
                 print(
-                    f"⚠️ Failed to extract subtitle track {track_id}: {result.stderr}")
+                    f"ERR: Failed to extract subtitle track {track_id}: {result.stderr}")
 
         except Exception as e:
-            print(f"⚠️ Error processing subtitle track {track_id}: {str(e)}")
+            print(f"ERR: Error processing subtitle track {track_id}: {str(e)}")
 
             for temp_file in [temp_subtitle_file, final_srt_file]:
                 try:

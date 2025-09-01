@@ -3,7 +3,7 @@
 Main window for MKV Cleaner Desktop Application
 """
 
-from controllers import MKVCleanerController
+from controllers.main_controller import MKVCleanerController
 from core.config import (
     ALLOWED_AUDIO_LANGS, ALLOWED_SUB_LANGS,
     DEFAULT_AUDIO_LANG, DEFAULT_SUBTITLE_LANG,

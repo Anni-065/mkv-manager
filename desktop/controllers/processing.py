@@ -9,11 +9,13 @@ from tkinter import messagebox
 from typing import Any, Optional, Callable, Union
 
 import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__)))))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+desktop_dir = os.path.dirname(current_dir)  # This goes up to /desktop from /desktop/controllers
+root_dir = os.path.dirname(desktop_dir)     # This goes up to root from /desktop
+sys.path.insert(0, root_dir)
 
 try:
-    from core import filter_and_remux
+    from core.processing.mkv_processor import filter_and_remux
 except ImportError:
     def filter_and_remux(file_path: str, output_folder: Optional[str] = None,
                          preferences: Optional[dict] = None, extract_subtitles: bool = False,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GUI components for MKV Cleaner Desktop Application
+GUI components for the main window of the MKV Cleaner Desktop Application
 """
 
 from .header import HeaderComponent

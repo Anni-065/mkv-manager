@@ -6,11 +6,7 @@ Main script for command-line usage of the MKV manager.
 
 import os
 from .processing.mkv_processor import filter_and_remux
-
-try:
-    from .config.config import MKV_FOLDER
-except ImportError:
-    from .config.config_example import MKV_FOLDER
+from .config import MKV_FOLDER
 
 
 def main():
