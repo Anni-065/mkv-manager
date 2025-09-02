@@ -25,6 +25,7 @@ try:
     from tkinterdnd2 import TkinterDnD
     DND_AVAILABLE = True
 except ImportError:
+    TkinterDnD = None  # type: ignore
     DND_AVAILABLE = False
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -38,29 +39,19 @@ desktop_dir = os.path.dirname(gui_dir)
 sys.path.insert(0, desktop_dir)
 sys.path.insert(0, gui_dir)
 
-try:
-    from core.config import *
-    print("✅ Using personal config.py")
-except ImportError:
-    try:
-        from core.config import *
-        print("⚠️ Using config_example.py - Consider creating a personal config.py")
-    except ImportError:
-        print("❌ No configuration file found!")
-        sys.exit(1)
-
-
 class MKVCleanerGUI(ScrollMixin, DragDropMixin):
     """Main GUI class for the MKV Cleaner application"""
 
     def __init__(self):
-        if DND_AVAILABLE:
+        if DND_AVAILABLE and TkinterDnD is not None:
             self.root = TkinterDnD.Tk()
         else:
             self.root = tk.Tk()
 
         self.root.title("MKV Cleaner")
         self.root.geometry("1000x800")
+        
+        self._set_window_icon()
 
         self.controller = MKVCleanerController(self)
 
@@ -75,6 +66,43 @@ class MKVCleanerGUI(ScrollMixin, DragDropMixin):
         self.create_interface()
         self.setup_drag_drop()
         self.controller.update_process_button_state()
+
+    def _set_window_icon(self):
+        """Set the window icon for system tray/taskbar display"""
+        try:
+            icon_path = None
+            
+            if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                icon_path = os.path.join(sys._MEIPASS, 'assets', 'icon.png')  # type: ignore
+            else:
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                gui_dir = os.path.dirname(current_dir)
+                root_dir = os.path.dirname(gui_dir)
+                icon_path = os.path.join(root_dir, 'assets', 'icon.png')
+            
+            if icon_path and os.path.exists(icon_path):
+                try:
+                    from PIL import Image, ImageTk
+                    
+                    img = Image.open(icon_path)
+                    img = img.resize((32, 32), Image.Resampling.LANCZOS)
+                    photo = ImageTk.PhotoImage(img)
+                    
+                    self.root.iconphoto(False, photo)  # type: ignore
+                    self._icon_refs = [photo]
+                    
+                    print(f"Window icon set from: {icon_path}")
+                    return
+                    
+                except ImportError:
+                    print("ERR: PIL not available - cannot set window icon")
+                except Exception as e:
+                    print(f"ERR: Failed to set icon: {e}")
+            else:
+                print(f"ERR: Icon file not found at: {icon_path}")
+                
+        except Exception as e:
+            print(f"ERR: Error setting window icon: {e}")
 
     def _init_variables(self):
         """Initialize all GUI variables"""
@@ -104,21 +132,14 @@ class MKVCleanerGUI(ScrollMixin, DragDropMixin):
                 'allowed_audio_langs', ALLOWED_AUDIO_LANGS)
             allowed_sub_langs = controller.language_config.get(
                 'allowed_sub_langs', ALLOWED_SUB_LANGS)
-            print(
-                f"🔄 GUI: Using controller language config: Audio={len(allowed_audio_langs)}, Sub={len(allowed_sub_langs)}")
+            
         else:
             allowed_audio_langs = ALLOWED_AUDIO_LANGS
             allowed_sub_langs = ALLOWED_SUB_LANGS
-            print(
-                f"🔄 GUI: Using default language config: Audio={len(allowed_audio_langs)}, Sub={len(allowed_sub_langs)}")
-
-        old_audio_count = len(self.audio_lang_vars)
-        old_sub_count = len(self.subtitle_lang_vars)
+            
         self.audio_lang_vars.clear()
         self.subtitle_lang_vars.clear()
-        print(
-            f"🧹 GUI: Cleared old language vars: Audio={old_audio_count}, Sub={old_sub_count}")
-
+                
         for lang_code in allowed_audio_langs:
             if lang_code in LANG_TITLES:
                 var = tk.BooleanVar()
@@ -130,9 +151,6 @@ class MKVCleanerGUI(ScrollMixin, DragDropMixin):
                 var = tk.BooleanVar()
                 var.set(True)
                 self.subtitle_lang_vars[lang_code] = var
-
-        print(
-            f"✅ GUI: Created new language vars: Audio={len(self.audio_lang_vars)}, Sub={len(self.subtitle_lang_vars)}")
 
         self.default_audio_var.set(
             f"{DEFAULT_AUDIO_LANG} - {LANG_TITLES.get(DEFAULT_AUDIO_LANG, 'Unknown')}")

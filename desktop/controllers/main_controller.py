@@ -19,8 +19,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
 
 from core.config.user_config import get_user_config_manager
-# Import SettingsWindow when needed to avoid circular import
-# from gui.settings.settings_window import SettingsWindow
 
 ALLOWED_AUDIO_LANGS: Set[str] = set()
 ALLOWED_SUB_LANGS: Set[str] = set()
@@ -44,7 +42,6 @@ def load_configuration():
         ORIGINAL_AUDIO_LANG = lang_settings.get('original_audio_lang', 'eng')
         ORIGINAL_SUBTITLE_LANG = lang_settings.get('original_subtitle_lang', 'eng')
         
-        print(f"✅ Using user configuration from: {user_config.get_config_file_path()}")
         return True
     except Exception as e:
         print(f"⚠️ Could not load user config, trying fallback: {e}")

@@ -57,7 +57,7 @@ class OutputOptionsComponent:
                              pady=5, padx=(20, 0))
 
         custom_radio = ttk.Radiobutton(
-            options_frame, text="📂 Custom folder:",
+            options_frame, text="Custom folder:",
             variable=self.output_vars['output_option'], value="custom",
             style='Modern.TRadiobutton'
         )

@@ -2,6 +2,7 @@
 Image utility module for loading and managing GUI images with color inversion support.
 """
 import os
+import sys
 import tkinter as tk
 from tkinter import PhotoImage
 from typing import Dict, Optional, Any
@@ -23,8 +24,15 @@ class ImageManager:
 
     def __init__(self):
         self._image_cache: Dict[str, Any] = {}
-        self._assets_path = os.path.join(
-            os.path.dirname(__file__), '..', 'assets')
+        
+        # Handle both PyInstaller bundle and normal execution
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # Running as PyInstaller bundle
+            self._assets_path = os.path.join(sys._MEIPASS, 'desktop', 'gui', 'assets')  # type: ignore
+        else:
+            # Running as normal Python script  
+            self._assets_path = os.path.join(
+                os.path.dirname(__file__), '..', 'assets')
 
     def get_image(self, image_name: str, size: Optional[tuple] = None,
                   invert_colors: bool = False) -> Optional[Any]:
