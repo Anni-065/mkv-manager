@@ -1,124 +1,145 @@
 # MKV Manager
 
-A Python tool for batch processing MKV files with intelligent filename parsing, track filtering, and multiple interfaces.
+A Python application for batch processing MKV video files with intelligent filename parsing, track filtering, and an desktop interface.
 
 ## Features
 
-- **Intelligent File Management** - Extracts series titles, season/episode numbers, and episode titles from various naming formats. Creates organized subfolders in the specified output path.
-- **Language-Based Track Filtering** - Keep or remove audio/subtitle tracks based on configurable language preferences. Preserves video quality while reducing file sizes through track removal.
-- **Subtitle Deduplication** - Automatically removes duplicate subtitles while preserving normal+forced pairs from the same source.
-- **Subtitle Conversion** - Convert subtitles to .srt to improve compatibility with video players. Optionally extract and save .srt subtitles next to the video files for manual editing.
-- **Multiple User Interfaces** - Choose from web UI with drag & drop, desktop GUI with full file control, or command line for automation.
-- **Real-time Progress** - Track processing status and view detailed logs during batch operations.
+- **Intelligent File Management** - Automatically extracts series titles, season/episode numbers, and episode titles from various filename formats. Creates organized folder structures based on detected content.
+- **Language-Based Track Filtering** - Configurable audio and subtitle track management based on language preferences. Removes unwanted tracks while preserving video quality to reduce file sizes.
+- **Advanced Subtitle Processing** - Deduplicates subtitle tracks while preserving normal and forced subtitle pairs. Converts subtitles to SRT format for improved player compatibility.
+- **Flexible Output Options** - Process files in-place, save to Downloads folder, or specify custom output directories with automatic folder organization.
+- **Desktop GUI Interface** - Modern, user-friendly interface with drag-and-drop support, real-time progress tracking, and comprehensive settings management.
+- **Command Line Support** - Automated batch processing capabilities for integration into workflows and scheduled tasks.
 
-## Quick Start
+## Installation
 
-### 1. Install Dependencies
+### Prerequisites
 
+- Python 3.7 or later
+- [MKVToolNix](https://mkvtoolnix.download/) - Install mkvmerge command-line tools
+#### GUI only:
+- Pillow (recommended for full image/icon support in the GUI; the app will still run without it but with degraded image/icon features)
+> [!NOTE] 
+> The app uses Python's built-in `tkinter` for the desktop interface. If you encounter a "No module named 'tkinter'" error, install or enable Tcl/Tk for your Python distribution (for example via your OS package manager or by reinstalling Python with Tcl/Tk support).
+
+### Setup
+
+1. Clone or download the repository
+2. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Configure the application:
+   - Adjust default settings via the GUI settings panel
+
+## Usage
+
+### Desktop Application
+
+Launch the graphical interface:
 ```bash
-# Install MKVToolNix from https://mkvtoolnix.download/
-pip install -r requirements.txt
+cd desktop
+python main.py
 ```
 
-### 2. Configure
+The desktop application provides:
 
-Copy `core/config_example.py` to `core/config.py` and edit default values, or configure via web interface.
+- **File Selection** - Browse and select MKV files or drag-and-drop files directly into the interface
+- **Output Configuration** - Choose to process files in their original location, save to Downloads folder, or specify a custom output directory
+- **Language Settings** - Configure preferred audio and subtitle languages with support for multiple language selections
+- **Processing Options** - Enable subtitle extraction, conversion to SRT format, and other processing preferences
+- **Real-time Monitoring** - Track processing progress with detailed status updates and logging
 
-#### Configuration Options
+### Command Line
 
-- **Language Preferences** - Set default audio and subtitle languages (e.g., English, German, Japanese)
-- **Output Paths** - Choose where processed files are saved
-- **Processing Behavior** - Enable/disable subtitle extraction, set filename formats
-
-### 3. Run
-
-**Web Interface:**
-
-```bash
-cd web; python app.py
-```
-
-Visit http://localhost:5000 to access the drag & drop interface.
-
-**Desktop GUI:**
-
-```bash
-cd desktop; start_desktop_gui.bat
-```
-
-Provides full file browser and output path control.
-
-**Command Line:**
-
+For automated batch processing:
 ```bash
 python scripts/run_cleaner.py
 ```
 
-Processes files from configured default folder.
+This processes all MKV files in the configured default directory using saved preferences.
 
-## How to Use
+## How It Works
 
-### Web Interface
+### File Processing Workflow
 
-1. **Configure Settings** - Set audio/subtitle language preferences and file paths
-2. **Add Files** - Drag & drop MKV files or browse folders
-3. **Review Selection** - Check parsed filenames and track information
-4. **Process Files** - Start batch processing with real-time progress updates
-5. **Download Results** - Processed files are organized and ready for manual download
+1. **Filename Analysis** - Automatically detects series information, season/episode numbers, and episode titles from various naming conventions
+2. **Track Analysis** - Examines audio and subtitle tracks, identifying languages and track properties
+3. **Language Filtering** - Removes or retains tracks based on configured language preferences
+4. **Subtitle Processing** - Deduplicates similar subtitles while preserving forced/normal pairs, optionally converts to SRT format
+5. **File Organization** - Creates organized folder structures and saves processed files with cleaned filenames
 
-### Desktop GUI
+### Configuration Options
 
-1. **Select Input Files** - Browse and select MKV files for processing
-2. **Choose Output Location** - Select where processed files should be saved (same folder, Downloads, or custom path)
-3. **Configure Languages** - Set preferred audio and subtitle languages
-4. **Start Processing** - Monitor progress and view detailed processing logs
-5. **Access Results** - Processed files are saved to your chosen location
+The application supports extensive customization through the settings interface:
 
-### Command Line
+- **Audio Languages** - Specify which audio languages to keep or remove
+- **Subtitle Languages** - Configure subtitle language preferences and handling
+- **File Paths** - Set default input/output directories and MKVToolNix installation path
+- **Processing Behavior** - Control subtitle extraction, conversion options, and file organization
 
-1. **Run Script** - Execute `python scripts/run_cleaner.py`
-2. **Batch Processing** - All MKV files in the configured folder are processed automatically
-3. **Check Results** - Processed files appear in "processed" subfolders
+## Technical Details
 
-## Interfaces
+### Supported Formats
 
-| Interface   | Best For                    | File Control                                   | Setup            |
-| ----------- | --------------------------- | ---------------------------------------------- | ---------------- |
-| **Web**     | Batch processing, modern UI | Limited (due to browser security restrictions) | None             |
-| **Desktop** | Full file path control      | Complete                                       | Tkinter required |
-| **Script**  | Automation, scheduled runs  | Same folder only                               | Manual config    |
+- **Input**: MKV (Matroska) video files
+- **Output**: Processed MKV files with optimized track selection
+- **Subtitles**: Supports conversion to SRT format for improved compatibility
 
-### Interface-Specific Features
+## Development and Building
 
-- **Web**: Drag & drop file upload, real-time progress bars, downloadable results, browser-based configuration
-- **Desktop**: Native file dialogs, flexible output paths, detailed processing logs, offline operation
-- **Script**: Automated batch processing, configurable via files, suitable for scheduled tasks
+### Project Structure
 
-## Requirements
+```
+mkv-manager/
+├── core/                 # Core processing logic
+│   ├── analysis/         # Filename and track analysis
+│   ├── config/           # Configuration management
+│   ├── processing/       # MKV file operations
+│   ├── subtitles/        # Subtitle processing
+│   └── utils/            # Utility functions
+├── desktop/              # Desktop GUI application
+│   ├── controllers/      # Business logic controllers
+│   ├── gui/              # User interface components
+│   └── styles/           # UI styling and themes
+├── scripts/              # Command-line scripts
+└── packaging/            # Build and distribution tools
+```
 
-- Python 3.7+
-- [MKVToolNix](https://mkvtoolnix.download/) (mkvmerge)
-- Flask (web interface only)
+### Building from Source
 
-## Building from Source
+To create a standalone executable:
 
-To create the installer:
+#### Linux/macOS
 
-1. **Install build dependencies:**
+1. Simple build using provided script:
+   ```bash
+   cd packaging
+   python build_linux.py
+   ```
+   
+   This script will:
+   - Install PyInstaller if needed
+   - Build a standalone executable
+   - Create a desktop entry (Linux only)
+   - Clean up build artifacts
 
+#### Windows
+
+1. Install build dependencies:
    ```bash
    pip install pyinstaller
-   # Download and install NSIS from https://nsis.sourceforge.io/
+   # Install NSIS from https://nsis.sourceforge.io/
    ```
 
-2. **Build the installer:**
-
+2. Build installer:
    ```bash
-   # Windows
-   packaging\build.bat
-
-   # Cross-platform alternative (not tested)
-   python packaging\build.py
+   cd packaging
+   python build.py
    ```
 
 For detailed build instructions, see [`packaging/README.md`](packaging/README.md).
+
+## License
+
+This project is licensed under the terms specified in the LICENSE.txt file.
