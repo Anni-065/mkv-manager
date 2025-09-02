@@ -16,12 +16,12 @@ class ScrollMixin:
 
     This mixin expects the following attributes to be available:
     - canvas: tk.Canvas - The canvas widget for scrolling
-    - root: tk.Tk - The root window widget
+    - root: Union[tk.Tk, tk.Toplevel] - The root window widget
     - canvas_window: int - The canvas window ID created with create_window()
     """
 
     canvas: tk.Canvas
-    root: tk.Tk
+    root: "Union[tk.Tk, tk.Toplevel]"
     canvas_window: int
 
  

@@ -3,8 +3,8 @@
 GUI components for the settings window of the MKV Cleaner Desktop Application
 """
 
-from .language_manager import LanguageManagerWindow
+from .settings_window import SettingsWindow
 
 __all__ = [
-    'LanguageManagerWindow'
+    'SettingsWindow'
 ]

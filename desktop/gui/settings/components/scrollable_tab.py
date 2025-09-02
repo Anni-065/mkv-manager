@@ -25,13 +25,12 @@ class ScrollableTabMixin:
         - frame: Optional tkinter Frame for delayed scrolling setup
     """
     
-    # Type hints for attributes that should be provided by the mixing class
     colors: Dict[str, str]
     frame: Optional[tk.Widget]
     
     def create_scrollable_frame(self, parent):
         """
-        Create a scrollable frame with cross-platform mouse wheel support.
+        Create scrollable frame with cross-platform mouse wheel support.
         
         Args:
             parent: The parent widget to contain the scrollable frame
@@ -41,14 +40,12 @@ class ScrollableTabMixin:
                 - canvas: The tk.Canvas widget
                 - scrollable_frame: The ttk.Frame that can be scrolled
         """
-        # Create canvas and scrollbar
-        # Get background color from colors dict if available, otherwise use default
+       
         bg_color = getattr(self, 'colors', {}).get('bg', '#ffffff')
         canvas = tk.Canvas(parent, bg=bg_color, highlightthickness=0)
         scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas, style='Modern.TFrame')
 
-        # Configure scrolling region update
         def update_scroll_region():
             canvas.configure(scrollregion=canvas.bbox("all"))
 
@@ -57,24 +54,19 @@ class ScrollableTabMixin:
             lambda e: canvas.after_idle(update_scroll_region)
         )
 
-        # Create window in canvas
         canvas_window = canvas.create_window(
             (0, 0), window=scrollable_frame, anchor="nw"
         )
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Handle canvas resize
         def on_canvas_configure(event):
-            # Update the scrollable frame width to match canvas
             canvas.itemconfig(canvas_window, width=event.width)
 
         canvas.bind('<Configure>', on_canvas_configure)
 
-        # Pack canvas and scrollbar
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # Set up cross-platform mouse wheel scrolling
         self._setup_mousewheel_scrolling(canvas, scrollable_frame)
 
         return canvas, scrollable_frame
@@ -96,7 +88,6 @@ class ScrollableTabMixin:
             elif event.num == 5:
                 canvas.yview_scroll(1, "units")
 
-        # Bind mouse wheel events based on platform
         if platform.system() in ('Windows', 'Darwin'):
             canvas.bind("<MouseWheel>", on_mousewheel)
             scrollable_frame.bind("<MouseWheel>", on_mousewheel)
@@ -106,7 +97,6 @@ class ScrollableTabMixin:
             scrollable_frame.bind("<Button-4>", on_mousewheel_linux)
             scrollable_frame.bind("<Button-5>", on_mousewheel_linux)
 
-        # Enable scrolling on child widgets for Linux (delayed setup)
         canvas.after(100, lambda: self._bind_children_mousewheel(
             scrollable_frame, on_mousewheel_linux
         ))
@@ -123,7 +113,6 @@ class ScrollableTabMixin:
             widget.bind("<Button-4>", scroll_command)
             widget.bind("<Button-5>", scroll_command)
             
-            # Recursively bind to all children
             for child in widget.winfo_children():
                 self._bind_children_mousewheel(child, scroll_command)
     
@@ -143,10 +132,11 @@ class ScrollableTabMixin:
     def _setup_delayed_child_scrolling(self):
         """Set up scrolling for dynamically created child widgets."""
         def on_mousewheel_linux(event):
-            # Find the nearest canvas parent and scroll it
             widget = event.widget
+
             while widget and not isinstance(widget, tk.Canvas):
                 widget = widget.master
+                
             if widget and isinstance(widget, tk.Canvas):
                 if event.num == 4:
                     widget.yview_scroll(-1, "units")

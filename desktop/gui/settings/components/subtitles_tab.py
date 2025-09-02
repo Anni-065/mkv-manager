@@ -23,7 +23,7 @@ class SubtitlesTabComponent(BaseTabComponent, ScrollableTabMixin):
     
     def get_tab_name(self):
         """Return the display name for this tab."""
-        return "Subtitle Settings"
+        return "Subtitle Options"
     
     def create_content(self):
         """Create the subtitle settings interface."""
@@ -49,13 +49,11 @@ class SubtitlesTabComponent(BaseTabComponent, ScrollableTabMixin):
     
     def _create_extraction_section(self, parent):
         """Create the subtitle extraction options section."""
-        # Section title
         extraction_label = self.create_label(
             parent, "Subtitle Extraction:", font_size=12, bold=True
         )
         extraction_label.pack(anchor='w', pady=(20, 10))
         
-        # Extract subtitles checkbox
         extract_check = ttk.Checkbutton(
             parent,
             text="Extract subtitles to SRT format during processing",
@@ -64,7 +62,6 @@ class SubtitlesTabComponent(BaseTabComponent, ScrollableTabMixin):
         )
         extract_check.pack(anchor='w', pady=5)
         
-        # Save extracted subtitles checkbox
         save_check = ttk.Checkbutton(
             parent,
             text="Save extracted SRT files next to processed MKV files",
@@ -89,7 +86,6 @@ class SubtitlesTabComponent(BaseTabComponent, ScrollableTabMixin):
         Returns:
             tuple: (is_valid: bool, error_message: str or None)
         """
-        # Subtitle settings are always valid (boolean values)
         return True, None
     
     def get_settings_data(self):

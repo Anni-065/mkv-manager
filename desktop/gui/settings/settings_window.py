@@ -26,7 +26,8 @@ from core.config.user_config import get_user_config_manager
 
 from .components import (
     PathsTabComponent,
-    LanguagesTabComponent, 
+    AudioLanguagesTabComponent,
+    SubtitleLanguagesTabComponent, 
     SubtitlesTabComponent
 )
 
@@ -121,7 +122,8 @@ class SettingsWindow:
         """Create and initialize all tab components."""
         tab_classes = [
             PathsTabComponent,
-            LanguagesTabComponent,
+            AudioLanguagesTabComponent,
+            SubtitleLanguagesTabComponent,
             SubtitlesTabComponent
         ]
         
@@ -217,33 +219,36 @@ class SettingsWindow:
         
         for component in self.tab_components:
             component_settings = component.get_settings_data()
-            # Merge dictionaries
-            for key, value in component_settings.items():
-                combined_settings[key] = value
+            
+            if 'language_settings' in component_settings:
+                if 'language_settings' not in combined_settings:
+                    combined_settings['language_settings'] = {}
+                
+                combined_settings['language_settings'].update(
+                    component_settings['language_settings']
+                )
+            else:
+                for key, value in component_settings.items():
+                    combined_settings[key] = value
         
         return combined_settings
     
     def _save_settings(self):
         """Save all settings to user config."""
         try:
-            # Validate all settings first
             is_valid, error_msg = self._validate_all_settings()
             if not is_valid:
                 messagebox.showerror("Validation Error", error_msg)
                 return
             
-            # Collect settings from all components
             new_settings = self._collect_all_settings()
             
-            # Additional validation for paths if they exist
             if not self._validate_paths_with_user_confirmation(new_settings):
                 return
             
-            # Save to config
             if self.user_config.update_all_settings(new_settings):
                 messagebox.showinfo("Success", "Settings saved successfully!")
                 
-                # Call callback if provided
                 if self.callback:
                     self.callback()
                 
@@ -269,7 +274,6 @@ class SettingsWindow:
         paths_settings = settings.get('paths', {})
         mkvmerge_path = paths_settings.get('mkvmerge_path', '').strip()
         
-        # Check MKVMerge path specifically
         if mkvmerge_path and not os.path.exists(mkvmerge_path):
             result = messagebox.askyesno(
                 "Warning",
