@@ -1,5 +1,4 @@
 # Personal configuration files
-config.py
 *.log
 processed/
 mkv_process_log.txt
