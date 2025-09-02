@@ -29,5 +29,7 @@ build/
 dist/
 *.exe
 *.msi
+*.AppImage
+*.AppDir/
 # PyInstaller build artifacts
 *.spec.bak
