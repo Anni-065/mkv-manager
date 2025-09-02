@@ -27,12 +27,54 @@ def run_command(cmd, shell=False):
         sys.exit(1)
 
 
+def ensure_windows_icon(project_root: Path):
+    """Ensure a Windows .ico exists in `assets/` by converting icon.png if necessary.
+
+    Returns the Path to the .ico file or None if not available.
+    """
+    assets_dir = project_root / "assets"
+    png = assets_dir / "icon.png"
+    ico = assets_dir / "icon.ico"
+
+    if ico.exists():
+        return ico
+
+    if not png.exists():
+        print("⚠️  No icon.png found in assets; continuing without custom icon.")
+        return None
+
+    try:
+        # Try to import Pillow; install automatically if missing
+        try:
+            from PIL import Image
+        except Exception:
+            print("Pillow not found; attempting to install Pillow via pip...")
+            run_command([sys.executable, "-m", "pip", "install", "Pillow"])
+            from PIL import Image
+
+        img = Image.open(png)
+        # Save multiple sizes into a single ICO file for best compatibility
+        sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
+        img.save(ico, format="ICO", sizes=sizes)
+        print(f"✅ Created Windows icon: {ico}")
+        return ico
+
+    except Exception as e:
+        print(f"⚠️  Failed to create .ico from {png}: {e}")
+        return None
+
+
 def build_executable():
     """Build executable for installer packaging"""
     print("Building executable (installer packaging mode)...")
 
     project_root = Path(__file__).parent.parent
     os.chdir(project_root)
+
+    # Ensure a Windows .ico exists so the PyInstaller spec can include it
+    ico_path = ensure_windows_icon(project_root)
+    if ico_path:
+        print(f"Using icon: {ico_path}")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         print(f"Using temporary build directory: {temp_dir}")
@@ -47,6 +89,17 @@ def build_executable():
             "name='MKV_Cleaner'",
             f"name='MKV_Cleaner',\n    distpath='{temp_dir}/dist'"
         )
+
+        # If we created an icon.ico in assets, patch the spec so the icon path
+        # is an absolute path. This avoids relative-path issues when the spec
+        # is executed from a temporary directory.
+        if ico_path and ico_path.exists():
+            abs_ico = ico_path.resolve().as_posix()
+            # Replace the conditional expression in the spec with an absolute path
+            modified_content = modified_content.replace(
+                "icon='../../assets/icon.ico' if os.path.exists('../../assets/icon.ico') else None,",
+                f"icon=r'{abs_ico}',"
+            )
 
         with open(temp_spec, 'w') as f:
             f.write(modified_content)
@@ -83,7 +136,18 @@ def build_installer_windows():
         sys.exit(1)
 
     nsi_script = "packaging/nsis/installer.nsi"
-    run_command([nsis_exe, nsi_script])
+    
+    # Check if custom icon exists and pass it to NSIS
+    project_root = Path(__file__).parent.parent
+    ico_path = project_root / "assets" / "icon.ico"
+    
+    cmd = [nsis_exe]
+    if ico_path.exists():
+        cmd.extend([f"/DCUSTOM_ICON={ico_path.resolve()}"])
+        print(f"Using custom icon for installer: {ico_path}")
+    
+    cmd.append(nsi_script)
+    run_command(cmd)
 
 
 def cleanup_build_artifacts():

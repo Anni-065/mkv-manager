@@ -31,8 +31,14 @@ SetCompressorDictSize 32
 
 ; Interface Settings
 !define MUI_ABORTWARNING
+; Use custom icon if available, otherwise use default
+!ifdef CUSTOM_ICON
+!define MUI_ICON "${CUSTOM_ICON}"
+!define MUI_UNICON "${CUSTOM_ICON}"
+!else
 !define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+!endif
 
 ; Custom welcome text
 !define MUI_WELCOMEPAGE_TITLE "Welcome to the ${APP_NAME} Setup"

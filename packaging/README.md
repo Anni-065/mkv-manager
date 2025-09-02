@@ -10,8 +10,9 @@ packaging/
 │   └── installer.nsi       # NSIS installer script
 ├── pyinstaller/            # PyInstaller configuration
 │   └── mkv_cleaner.spec    # PyInstaller specification
-├── build.bat               # Windows build script
-├── build.py                # Cross-platform build script
+├── build_windows.bat       # Windows build script
+├── build_windows.py        # Windows build script (Python)
+├── build_linux.py          # Linux build script
 └── README.md               # This file
 ```
 
@@ -21,75 +22,79 @@ packaging/
 
 - **Python 3.7+** with all project dependencies installed
 - **PyInstaller** - `pip install pyinstaller`
+
+### Windows Only
 - **NSIS (Nullsoft Scriptable Install System)** - Download from https://nsis.sourceforge.io/
-
-### NSIS Installation
-
-- Download and install NSIS from the official website
 - Default installation path: `C:\Program Files (x86)\NSIS\`
 - Make sure `makensis.exe` is accessible
+
+### Linux Only
+- **appimagetool** (automatically downloaded if not available)
 
 ## Building the Application
 
 ### Windows
 
 ```bash
-packaging\build.bat
+packaging\build_windows.bat
 ```
 
-### Cross-Platform (not tested)
+This will create `MKV_Cleaner_Installer.exe` in the project root.
+
+### Linux
 
 ```bash
-python packaging\build.py
+python3 packaging/build_linux.py
 ```
 
-This will:
-
-- Create the installer using PyInstaller and NSIS
-- Output `MKV_Cleaner_Installer.exe` in the project root
+This will create:
+- `dist/mkv-manager-linux` - Standalone executable
+- `dist/mkv-manager-linux.AppImage` - Portable AppImage
 
 ## Manual Build (Advanced Users)
 
-If you need to build manually:
+### Windows
 
 1. **Build executable:**
-
    ```bash
-   # From project root
    pyinstaller packaging\pyinstaller\mkv_cleaner.spec
    ```
 
 2. **Create installer:**
-
    ```bash
    "C:\Program Files (x86)\NSIS\makensis.exe" packaging\nsis\installer.nsi
    ```
 
-3. **Clean up (recommended):**
+### Linux
+
+1. **Build executable:**
    ```bash
-   rmdir /s /q build
-   rmdir /s /q dist
+   pyinstaller --onefile desktop/main.py
    ```
 
-The installer will be saved in the project root.
+2. **Create AppImage:**
+   Use the build script for proper AppImage creation.
 
 ## Troubleshooting
 
-### Common Issues
+### Windows Issues
 
 1. **NSIS not found**
-
-   - Verify NSIS installation path in `build.bat`
+   - Verify NSIS installation path in `build_windows.bat`
    - Update path if NSIS is installed elsewhere
 
 2. **PyInstaller import errors**
-
    - Ensure all dependencies are installed: `pip install -r requirements.txt`
    - Check virtual environment activation
 
-3. **Missing files in build**
-   - Review `mkv_cleaner.spec` for missing data files
-   - Add missing dependencies to the spec file
+### Linux Issues
+
+1. **AppImage creation fails**
+   - Script will automatically download appimagetool
+   - Ensure executable permissions: `chmod +x script`
+
+2. **Missing dependencies**
+   - Install required packages: `pip install -r requirements.txt`
 
 ### Build Artifacts to Ignore
 
@@ -101,11 +106,17 @@ dist/
 build/
 *.exe
 *.msi
+*.AppImage
+*.AppDir/
 ```
 
-## GitHub Release Workflow
+## Distribution
 
-1. **Create release tag**: `git tag v1.0.0`
-2. **Build installer**: Run `packaging\build.bat`
-3. **Upload to GitHub Releases**: Upload `MKV_Cleaner_Installer.exe`
-4. **Clean repository**: Remove build artifacts from repo
+### Windows
+- Upload `MKV_Cleaner_Installer.exe` to releases
+- Users run installer for system installation
+
+### Linux
+- Upload `mkv-manager-linux.AppImage` and `install.sh` to releases
+- Users run `./install.sh` for system installation
+- Or run AppImage directly for portable use
