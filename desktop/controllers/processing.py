@@ -66,6 +66,10 @@ class ProcessingController:
             state='disabled', bg=self.gui.colors['border_light'], fg=self.gui.colors['text_muted'], cursor='arrow')
         self.processing = True
 
+        # Initialize progress bar
+        self.gui.root.after(0, lambda: self.gui.progress_bar.config(value=0))
+        self.gui.root.after(0, lambda: self.gui.progress_label.config(text="Starting processing..."))
+
         thread = threading.Thread(target=self.process_thread)
         thread.daemon = True
         thread.start()
@@ -98,6 +102,10 @@ class ProcessingController:
 
                 for file_info in files:
                     try:
+                        # Initialize progress for this file
+                        initial_progress = (processed_count / total_files) * 100
+                        self.gui.root.after(0, lambda p=initial_progress: self.gui.progress_bar.config(value=p))
+                        
                         status_text = f"Processing: {file_info['name']}"
                         self.gui.root.after(0, lambda t=status_text: self.gui.progress_label.config(
                             text=t))
@@ -121,7 +129,8 @@ class ProcessingController:
                                 0, lambda p=overall_progress: self.gui.progress_bar.config(value=p))
 
                         filter_and_remux(
-                            file_info['path'], output_folder, preferences)
+                            file_info['path'], output_folder, preferences, 
+                            extract_subtitles=False, progress_callback=update_progress)
 
                         processed_count += 1
 

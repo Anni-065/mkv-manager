@@ -4,7 +4,6 @@ Process section component for MKV Cleaner Desktop Application
 """
 
 from styles import UIHelpers
-import tkinter as tk
 from tkinter import ttk
 import os
 import sys
@@ -31,11 +30,20 @@ class ProcessSectionComponent:
         process_frame.grid(row=4, column=0, sticky='ew')
         process_frame.grid_columnconfigure(0, weight=1)
 
-        progress_bar = ttk.Progressbar(
-            process_frame, mode='determinate',
-            style='Modern.Horizontal.TProgressbar'
-        )
-        progress_bar.grid(row=0, column=0, sticky='ew', pady=(0, 10))
+        try:
+            progress_bar = UIHelpers.create_progress_bar(
+                process_frame, 
+                colors=self.colors,
+                height=14
+            )
+            progress_bar.grid(row=0, column=0, sticky='ew', pady=(0, 10))
+        except:
+            progress_bar = ttk.Progressbar(
+                process_frame, mode='determinate',
+                style='Modern.Horizontal.TProgressbar',
+                maximum=100
+            )
+            progress_bar.grid(row=0, column=0, sticky='ew', pady=(0, 10))
 
         progress_label = ttk.Label(
             process_frame, text="Ready to process files",
@@ -44,7 +52,7 @@ class ProcessSectionComponent:
         progress_label.grid(row=1, column=0, pady=(0, 15))
 
         process_button = UIHelpers.create_button(
-            process_frame, text="🚀 Process Files", command=self.controller.process_files,
+            process_frame, text="Start Processing", command=self.controller.process_files,
             button_type="primary", colors=self.colors, width=200, height=45
         )
         if process_button:

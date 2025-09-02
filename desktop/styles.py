@@ -6,6 +6,7 @@ This module contains all color schemes, ttk styles, and UI configuration
 
 import tkinter as tk
 from tkinter import ttk
+import platform
 
 # lazy import to avoid circular import errors
 HAS_IMAGES = None
@@ -315,23 +316,45 @@ class ModernStyleManager:
 
     def _setup_progressbar_styles(self):
         """Configure modern progressbar styles with enhanced visibility"""
-        self.style.configure('Modern.TProgressbar',
-                             background=self.colors['accent'],
+        self.style.configure('Modern.Horizontal.TProgressbar',
+                             background=self.colors['success'],
                              troughcolor=self.colors['border_light'],
                              borderwidth=1,
-                             lightcolor=self.colors['accent'],
-                             darkcolor=self.colors['accent_dark'],
-                             thickness=12,
+                             lightcolor=self.colors['success'],
+                             darkcolor=self.colors['success_hover'],
+                             thickness=14,
                              relief='flat',
-                             bordercolor=self.colors['border'])
+                             bordercolor=self.colors['border'],
+                             foreground=self.colors['success'])
 
-        # Configure progressbar layout for better appearance
-        self.style.layout('Modern.TProgressbar',
-                          [('Progressbar.trough',
-                           {'children': [('Progressbar.pbar',
+        self.style.layout('Modern.Horizontal.TProgressbar',
+                          [('Horizontal.Progressbar.trough',
+                           {'children': [('Horizontal.Progressbar.pbar',
                                           {'side': 'left', 'sticky': 'ns'})],
                             'sticky': 'nswe'})])
 
+        self.style.map('Modern.Horizontal.TProgressbar',
+                       background=[('active', self.colors['success']),
+                                   ('pressed', self.colors['success_hover'])])
+
+        current_platform = platform.system()
+        if current_platform == 'Linux':
+            self.style.configure('Modern.Horizontal.TProgressbar',
+                                 pbarrelief='flat',
+                                 troughrelief='flat')
+            
+            try:
+                self.style.element_options('Horizontal.Progressbar.pbar')
+                self.style.configure('Modern.Horizontal.TProgressbar',
+                                     pbar=self.colors['success'])
+            except tk.TclError:
+                pass  # Some Linux systems don't support this
+        
+        elif current_platform == 'Darwin':  # macOS
+            # macOS might need different styling
+            self.style.configure('Modern.Horizontal.TProgressbar',
+                                 focuscolor='none')
+        
     def _setup_scrollbar_styles(self):
         """Configure modern scrollbar styles"""
         self.style.configure('Modern.Vertical.TScrollbar',
@@ -399,13 +422,11 @@ class ModernStyleManager:
 
         container = tk.Frame(parent, bg=colors['bg'], relief='flat', bd=0)
 
-        # Main card frame with border
         card_frame = tk.Frame(container, bg=colors['card_bg'], relief='solid',
                               bd=1, highlightbackground=colors['border'],
                               highlightcolor=colors['border'], highlightthickness=0)
         card_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
 
-        # Content frame inside card
         content_frame = tk.Frame(
             card_frame, bg=colors['card_bg'], relief='flat', bd=0)
         content_frame.pack(fill=tk.BOTH, expand=True,
@@ -497,7 +518,6 @@ class UIHelpers:
             canvas.delete("button_bg")
             canvas.delete("button_border")
 
-            # Draw rounded rectangle
             canvas.create_rectangle(x1 + radius, y1, x2 - radius, y2,
                                     fill=fill_color, outline="", tags="button_bg")
             canvas.create_rectangle(x1, y1 + radius, x2, y2 - radius,
@@ -1009,6 +1029,82 @@ class UIHelpers:
         canvas.pack()
 
         return container
+
+    @staticmethod
+    def create_progress_bar(parent, colors=None, **kwargs):
+        """Create a cross-platform progress bar with consistent styling"""
+        if colors is None:
+            return ttk.Progressbar(parent, mode='determinate', **kwargs)
+        
+        class CustomProgressBar:
+            def __init__(self, parent, colors, **kwargs):
+                self.container = tk.Frame(parent, bg=colors.get('bg', '#ffffff'))
+                
+                self.min_width = kwargs.get('width', 300)
+                self.height = kwargs.get('height', 14)
+                
+                self.canvas = tk.Canvas(self.container, height=self.height,
+                                       bg=colors.get('bg', '#ffffff'),
+                                       highlightthickness=1,
+                                       highlightbackground=colors.get('border', '#cccccc'))
+                
+                self.canvas.pack(fill='both', expand=True, padx=2, pady=2)
+                self.current_value = 0
+                self.colors = colors
+                
+                self.canvas.bind('<Configure>', self._on_canvas_resize)
+                
+                self.container.after(10, self._draw_progress_bar)
+            
+            def _on_canvas_resize(self, event):
+                """Redraw progress bar when canvas is resized"""
+                self._draw_progress_bar()
+            
+            def _draw_progress_bar(self):
+                """Draw the progress bar based on current canvas size"""
+                self.canvas.delete('all')
+                
+                self.canvas.update_idletasks()
+                canvas_width = self.canvas.winfo_width()
+                canvas_height = self.canvas.winfo_height()
+                
+                if canvas_width <= 1 or canvas_height <= 1:
+                    return
+                
+                self.canvas.create_rectangle(2, 2, canvas_width-2, canvas_height-2,
+                                           fill=self.colors.get('border_light', '#f0f0f0'),
+                                           outline=self.colors.get('border', '#cccccc'),
+                                           tags='trough')
+                
+                if self.current_value > 0:
+                    progress_width = max(2, (self.current_value / 100.0) * (canvas_width - 4))
+                    self.canvas.create_rectangle(2, 2, progress_width + 2, canvas_height - 2,
+                                               fill=self.colors.get('success', '#1a7f37'),
+                                               outline='',
+                                               tags='progress')
+            
+            def config(self, value=None, **kwargs):
+                if value is not None:
+                    self.current_value = max(0, min(100, value))
+                    self._draw_progress_bar()
+            
+            def configure(self, **kwargs):
+                if 'value' in kwargs:
+                    self.config(value=kwargs['value'])
+            
+            def get(self):
+                return self.current_value
+            
+            def grid(self, **kwargs):
+                return self.container.grid(**kwargs)
+            
+            def pack(self, **kwargs):
+                return self.container.pack(**kwargs)
+            
+            def place(self, **kwargs):
+                return self.container.place(**kwargs)
+        
+        return CustomProgressBar(parent, colors, **kwargs)
 
 
 FONTS = {

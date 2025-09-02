@@ -9,9 +9,14 @@ import json
 from ..utils.subprocess_utils import run_hidden
 
 try:
-    from ..config.user_config import MKVMERGE_PATH
+    from ..config.user_config import get_user_config_manager
+    _user_config = get_user_config_manager()
+    _settings = _user_config.get_all_settings()
+    _paths = _settings.get('paths', {})
+    MKVMERGE_PATH = _paths.get('mkvmerge_path', 'mkvmerge')
+    
 except ImportError:
-    from ..config import MKVMERGE_PATH
+    MKVMERGE_PATH = 'mkvmerge'
 
 
 def is_forced_subtitle_by_name(track_name):
@@ -41,6 +46,8 @@ def get_track_info(file_path):
     Returns:
         List of track dictionaries with id, type, language, forced status, etc.
     """
+    result = None  # Initialize result to avoid unbound variable issues
+    
     try:
         file_path = os.path.normpath(file_path)
 
@@ -52,7 +59,6 @@ def get_track_info(file_path):
             print(f"Error: File is not readable: {file_path}")
             return []
 
-        print(f"DEBUG: Analyzing tracks for: {os.path.basename(file_path)}")
         cmd = [MKVMERGE_PATH, "-J", file_path]
 
         result = run_hidden(cmd, capture_output=True, text=True)

@@ -100,9 +100,6 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
         original_audio_lang = ORIGINAL_AUDIO_LANG
         original_subtitle_lang = ORIGINAL_SUBTITLE_LANG
 
-    print(f"DEBUG: Using audio languages: {allowed_audio_langs}")
-    print(f"DEBUG: Using subtitle languages: {allowed_sub_langs}")
-
     if output_folder:
         try:
             os.makedirs(output_folder, exist_ok=True)
@@ -225,11 +222,7 @@ def filter_and_remux(file_path, output_folder=None, preferences=None, extract_su
                     "track_name": track_name,
                     "title": title
                 })
-                print(
-                    f"DEBUG: ✅ Collecting subtitle track {tid} [{title}] (track_name: '{track_name}')")
             else:
-                print(
-                    f"DEBUG: ❌ Skipping subtitle track {tid} [{title}] (track_name: '{track_name}')")
                 change_log.append(f"Removed subtitle track {tid} [{title}]")
 
     deduplicated_subtitles = deduplicate_subtitles(subtitle_tracks)

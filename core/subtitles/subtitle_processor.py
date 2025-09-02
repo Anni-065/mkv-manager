@@ -93,8 +93,6 @@ def deduplicate_subtitles(subtitle_tracks):
                 best_score = score
                 best_source = source
 
-        print(f"DEBUG: Best source: '{best_source}' with score: {best_score}")
-
         if best_source and best_source in sources:
             result.extend(sources[best_source]["normal"])
             result.extend(sources[best_source]["forced"])
