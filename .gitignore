@@ -14,9 +14,8 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+*venv*
 env/
-venv/
-.venv/
 .env
 # OS files
 .DS_Store
