@@ -9,21 +9,27 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 tkinter_datas, tkinter_binaries, tkinter_hiddenimports = collect_all('tkinter')
 flask_datas, flask_binaries, flask_hiddenimports = collect_all('flask')
 
+# Try to collect tkinterdnd2 if available
+try:
+    tkinterdnd2_datas, tkinterdnd2_binaries, tkinterdnd2_hiddenimports = collect_all('tkinterdnd2')
+except ImportError:
+    print("WARNING: tkinterdnd2 not found - drag and drop will not work")
+    tkinterdnd2_datas, tkinterdnd2_binaries, tkinterdnd2_hiddenimports = [], [], []
+
 # Get Python installation path for bundling system libraries
 python_base = sys.base_prefix
 
 a = Analysis(
     ['../../desktop/main.py'],
     pathex=['../..'],
-    binaries=tkinter_binaries + flask_binaries,
+    binaries=tkinter_binaries + tkinterdnd2_binaries,
     datas=[
         ('../../core', 'core'), 
         ('../../desktop', 'desktop'),
-        ('../../web', 'web'),
         # Bundle complete Tcl/Tk installation for tkinter
         (os.path.join(python_base, 'tcl'), 'tcl'),
         (os.path.join(python_base, 'DLLs'), 'DLLs'),
-    ] + tkinter_datas + flask_datas,
+    ] + tkinter_datas + tkinterdnd2_datas,
     hiddenimports=[
         # Core tkinter modules
         'tkinter',
@@ -34,11 +40,11 @@ a = Analysis(
         'tkinter.font',
         'tkinter.scrolledtext',
         '_tkinter',
-        # Flask/web modules
-        'flask',
-        'werkzeug',
-        'jinja2',
-    ] + tkinter_hiddenimports + flask_hiddenimports + collect_submodules('core') + collect_submodules('desktop') + collect_submodules('web'),
+        # Drag and drop support
+        'tkinterdnd2',
+        'tkinterdnd2.dnd',
+        'tkinterdnd2.compat',
+    ] + tkinter_hiddenimports + tkinterdnd2_hiddenimports + collect_submodules('core') + collect_submodules('desktop'),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

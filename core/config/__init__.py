@@ -10,12 +10,7 @@ from .constants import (
     ABBREVIATIONS, SEASON_EPISODE_PATTERN, QUALITY_PATTERN_SERIES, SOURCE_PATTERN
 )
 
-# Try to load configuration in order of preference:
-# 1. User-specific config (JSON)
-# 2. Hardcoded fallback defaults
-
 try:
-    # Try user configuration first
     from .user_config import get_user_config_manager
     _user_config = get_user_config_manager()
     _lang_settings = _user_config.get_language_settings()
@@ -36,11 +31,10 @@ try:
     EXTRACT_SUBTITLES = _subtitle_settings.get('extract_subtitles', False)
     SAVE_EXTRACTED_SUBTITLES = _subtitle_settings.get('save_extracted_subtitles', False)
     
-    print("✅ Using user configuration settings")
     
 except Exception as e:
-    print(f"⚠️ Could not load user config, using hardcoded defaults: {e}")
-    # Hardcoded fallback defaults - no longer relying on defaults.py
+    print(f"INFO: Could not load user config, using hardcoded defaults: {e}")
+
     ALLOWED_AUDIO_LANGS = {"eng", "ger", "jpn", "kor"}
     ALLOWED_SUB_LANGS = {"eng", "ger", "kor", "gre"}
     DEFAULT_AUDIO_LANG = "eng"

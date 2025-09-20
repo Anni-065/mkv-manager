@@ -16,6 +16,127 @@ import stat
 import importlib.util
 
 
+def check_existing_installation():
+    """Check if MKV Manager is already installed and offer to remove it"""
+    if platform.system() != "Linux":
+        return
+    
+    app_name = "mkv-manager"
+    
+    # Check for system-wide installation
+    system_install = Path("/opt") / app_name / app_name
+    system_bin_link = Path("/usr/local/bin") / app_name
+    system_desktop = Path("/usr/share/applications") / f"{app_name}.desktop"
+    
+    # Check for user installation
+    user_bin = Path.home() / ".local" / "bin" / app_name
+    user_desktop = Path.home() / ".local" / "share" / "applications" / f"{app_name}.desktop"
+    
+    # Check what's installed
+    system_installed = (system_install.exists() or 
+                       system_bin_link.exists() or 
+                       system_desktop.exists())
+    user_installed = (user_bin.exists() or user_desktop.exists())
+    
+    if not (system_installed or user_installed):
+        print("✅ No existing installation found")
+        return
+    
+    print("⚠️  Existing MKV Manager installation detected:")
+    if system_installed:
+        print("   • System-wide installation found")
+    if user_installed:
+        print("   • User installation found")
+    
+    print()
+    response = input("Remove existing installation before building? [Y/n]: ").strip().lower()
+    if response in ('', 'y', 'yes'):
+        remove_existing_installation()
+    else:
+        print("⚠️  Continuing with existing installation present")
+        print("   This may cause conflicts or leave old files behind")
+
+
+def remove_existing_installation():
+    """Remove existing MKV Manager installation"""
+    print("Removing existing installation...")
+    
+    app_name = "mkv-manager"
+    
+    # System-wide installation paths
+    system_install_dir = Path("/opt") / app_name
+    system_bin_link = Path("/usr/local/bin") / app_name
+    system_desktop = Path("/usr/share/applications") / f"{app_name}.desktop"
+    system_icon = Path("/usr/share/icons/hicolor/256x256/apps") / f"{app_name}.png"
+    
+    # User installation paths
+    user_bin = Path.home() / ".local" / "bin" / app_name
+    user_desktop = Path.home() / ".local" / "share" / "applications" / f"{app_name}.desktop"
+    user_icon = Path.home() / ".local" / "share" / "icons" / "hicolor" / "256x256" / "apps" / f"{app_name}.png"
+    
+    removed_items = []
+    
+    # Remove system-wide installation (requires sudo)
+    if system_install_dir.exists() or system_bin_link.exists() or system_desktop.exists():
+        try:
+            # Try to remove system files with sudo
+            if system_install_dir.exists():
+                subprocess.run(["sudo", "rm", "-rf", str(system_install_dir)], check=True)
+                removed_items.append("system installation directory")
+            
+            if system_bin_link.exists():
+                subprocess.run(["sudo", "rm", "-f", str(system_bin_link)], check=True)
+                removed_items.append("system binary link")
+            
+            if system_desktop.exists():
+                subprocess.run(["sudo", "rm", "-f", str(system_desktop)], check=True)
+                removed_items.append("system desktop entry")
+            
+            if system_icon.exists():
+                subprocess.run(["sudo", "rm", "-f", str(system_icon)], check=True)
+                removed_items.append("system icon")
+                
+        except subprocess.CalledProcessError as e:
+            print(f"⚠️  Could not remove system installation (sudo required): {e}")
+        except FileNotFoundError:
+            print("⚠️  sudo not available - skipping system installation removal")
+    
+    # Remove user installation (no sudo needed)
+    for path, desc in [(user_bin, "user binary"), 
+                       (user_desktop, "user desktop entry"), 
+                       (user_icon, "user icon")]:
+        if path.exists():
+            try:
+                path.unlink()
+                removed_items.append(desc)
+            except Exception as e:
+                print(f"⚠️  Could not remove {desc}: {e}")
+    
+    # Update desktop database and icon cache
+    try:
+        # Update system desktop database
+        if shutil.which("update-desktop-database"):
+            subprocess.run(["sudo", "update-desktop-database", "/usr/share/applications/"], 
+                         capture_output=True, check=False)
+            # Update user desktop database
+            user_apps_dir = Path.home() / ".local" / "share" / "applications"
+            if user_apps_dir.exists():
+                subprocess.run(["update-desktop-database", str(user_apps_dir)], 
+                             capture_output=True, check=False)
+        
+        # Update icon cache
+        if shutil.which("gtk-update-icon-cache"):
+            subprocess.run(["sudo", "gtk-update-icon-cache", "-f", "-t", 
+                          "/usr/share/icons/hicolor/"], capture_output=True, check=False)
+    except Exception:
+        pass  # Ignore cache update errors
+    
+    if removed_items:
+        print(f"✅ Removed: {', '.join(removed_items)}")
+    else:
+        print("✅ No files needed removal")
+
+
 def run_command(cmd, shell=False):
     """Run a command and handle errors"""
     try:
@@ -73,7 +194,7 @@ def check_dependencies(python_executable):
     print("Checking dependencies...")
     
     # Install required packages for the build
-    required_packages = ["pyinstaller", "pillow"]
+    required_packages = ["pyinstaller", "pillow", "tkinterdnd2"]
     
     for package in required_packages:
         try:
@@ -227,6 +348,7 @@ print('✅ Created XBM icon with Pillow')
         "--hidden-import=tkinter.filedialog",
         "--hidden-import=tkinter.messagebox",
         "--hidden-import=tkinter.font",
+        "--hidden-import=tkinterdnd2",
         "--hidden-import=tkinterdnd2",
         "--hidden-import=PIL",
         "--hidden-import=PIL.Image",
@@ -438,6 +560,13 @@ def cleanup_build_artifacts():
 
 def main():
     """Main build function"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='MKV Manager Linux/macOS Build Script')
+    parser.add_argument('--force', action='store_true', 
+                       help='Skip existing installation check and build directly')
+    args = parser.parse_args()
+    
     print("MKV Manager Linux/macOS Build Script")
     print("=" * 40)
     
@@ -453,6 +582,12 @@ def main():
     print()
     
     try:
+        # Check for existing installation before building (unless --force is used)
+        if not args.force:
+            check_existing_installation()
+        else:
+            print("⚠️  Skipping existing installation check (--force used)")
+        
         python_executable = setup_build_environment()
         check_dependencies(python_executable)
         executable = build_executable(python_executable)
@@ -470,18 +605,17 @@ def main():
         
         print()
         print("Build completed successfully!")
-        print(f"   Executable: {executable}")
+        print(f"   Standalone executable: {executable}")
         if appimage:
             print(f"   AppImage: {appimage}")
             print()
-            print("📦 Distribution:")
-            print(f"   • The AppImage can be distributed as a single file")
-            print(f"   • Users can download {appimage.name} and run it directly")
-            print(f"   • No installation required - just make executable and run")
+            print("📦 Distribution options:")
+            print(f"   • Use the standalone executable for reliable installation")
+            print(f"   • Use the AppImage for portable deployment (requires FUSE)")
             print()
-            print("🚀 To run the AppImage:")
-            print(f"   chmod +x {appimage}")
-            print(f"   {appimage}")
+            print("🚀 To install:")
+            print(f"   ./install.sh")
+            print("   (The install script will automatically use the standalone executable)")
         print()
         print("💡 The application is now independent of this source directory")
         
